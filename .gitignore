@@ -16,7 +16,6 @@
 .installed.cfg
 .settings
 XML_Harvesting_Agent.egg-info/*
-bin
 build
 develop-eggs
 dist
@@ -32,6 +31,4 @@ selenium-screenshot*
 Thumbs.db
 var
 tags
-buildout-cache
 atlassian-*.xml
-zeocluster

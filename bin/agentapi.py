@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 from agent.config import server_port
 from agent.harvest import harvest
 from agent.utils import get_request_host
+from agent.transformer import transform
 
 
 class AgentAPI(object):
@@ -13,6 +14,12 @@ class AgentAPI(object):
     @cherrypy.tools.json_out()
     def harvest(self, **kwargs):
         results = harvest(kwargs)
+        return results
+
+    @cherrypy.expose
+    @cherrypy.tools.json_out()
+    def transform(self, **kwargs):
+        results = transform(kwargs)
         return results
 
     @cherrypy.expose

@@ -87,7 +87,7 @@ def _get_xml_records(settings):
                 continue
 
             afile = open(fullpath)
-            records.append({'name': filename, 'xmlData': afile.read()})
+            records.append({'title': filename, 'xmlData': afile.read()})
             afile.close()
 
         if messages:

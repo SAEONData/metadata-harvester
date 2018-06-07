@@ -23,6 +23,19 @@ def _checkXmlStructure(data):
         return str(e)
 
 
+def _get_xml_processor(settings):
+    if settings['standard'] == 'CBERS':
+        return cbers_processor
+    return None
+
+
+def _clean_xml_data(data):
+    # Strip all non ascii character
+    data = data.replace('\xe2\x80\x99', "'")
+    data = data.encode('utf-8', 'strict')
+    return data
+
+
 def transform_record(record, settings):
     """
     @summary: extract the metadata from the given xml record
@@ -30,32 +43,32 @@ def transform_record(record, settings):
     """
 
     meta = {'valid': False, 'error': None}
-    xml_name = record['name']
-    meta['title'] = xml_name
+    title = record['title']
+    meta['title'] = title
     meta['standard'] = settings['standard']
-    logger.info('Parse record {}'.format(xml_name))
+    logger.info('Parse record {}'.format(title))
 
-    # Strip all non ascii character
-    data = record['xmlData']
-    data = data.replace('\xe2\x80\x99', "'")
-    data = data.encode('utf-8', 'strict')
+    data = _clean_xml_data(record['xmlData'])
     meta['xml'] = str(data)
 
-    failed = _checkXmlStructure(data)
-
-    if failed:
+    xml_processor = _get_xml_processor(settings)
+    if not xml_processor:
         meta['error'] = {
-            'eventType': 'MetadataCreate',
-            'category': 'Structure: Invalid XML',
-            'logType': 'Error',
-            'message': "Invalid Xml in document %s: %s " % (
-                xml_name, failed),
+            'message': "Cannot transform standard {} yet".format(
+                settings['standard']),
         }
         return meta
 
-    if settings['standard'] == 'CBERS':
-        json_dict = xml.parse_from_string(cbers_processor, data)
-        meta['jsonData'] = json_dict
+    failed = _checkXmlStructure(data)
+    if failed:
+        meta['error'] = {
+            'message': "Invalid Xml in document {}: {}".format(
+                title, failed),
+        }
+        return meta
+
+    json_dict = xml.parse_from_string(xml_processor, data)
+    meta['jsonData'] = json_dict
 
     # meta['jsonData']['additionalFields']['source_uri'] = uri
     # if len(self.getDefaultValues()) and len(meta.jsonData):
@@ -81,3 +94,31 @@ def transform_record(record, settings):
     print(msg)
     meta['valid'] = True
     return meta
+
+
+def transform(kwargs):
+    output = {'success': False}
+    source_settings = {}
+
+    record = {}
+    if kwargs.get('title'):
+        record['title'] = kwargs.get('title')
+    else:
+        output['error'] = {'message': 'record title is required'}
+        return output
+
+    if kwargs.get('xmlData'):
+        record['xmlData'] = kwargs.get('xmlData')
+    else:
+        output['error'] = {'message': 'xml data is required'}
+        return output
+
+    if kwargs.get('standard'):
+        source_settings['standard'] = kwargs.get('standard')
+    else:
+        output['error'] = {'message': 'metadata standard is required'}
+        return output
+
+    results = transform_record(record, source_settings)
+
+    return results
