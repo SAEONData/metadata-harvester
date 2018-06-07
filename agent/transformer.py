@@ -50,7 +50,6 @@ def transform_record(record, settings):
             'logType': 'Error',
             'message': "Invalid Xml in document %s: %s " % (
                 xml_name, failed),
-            'metadataUrl': self.absolute_url(),
         }
         return meta
 

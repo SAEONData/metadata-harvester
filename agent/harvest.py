@@ -106,7 +106,7 @@ def _harvest_records(settings):
     """
     @summary: does the harvesting for the given type and url
     """
-    output = {'success': False}
+    output = {'success': False, 'records': []}
 
     logger.info('Harvesting: %s' % settings)
     records = _get_xml_records(settings)
@@ -119,7 +119,7 @@ def _harvest_records(settings):
 
     for record in records:
         result = transform_record(record, settings)
-        output['records'] = result
+        output['records'].append(result)
 
     output['success'] = True
     return output
