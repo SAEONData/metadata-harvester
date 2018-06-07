@@ -44,26 +44,16 @@ class AgentAPI(object):
         child = ET.SubElement(api, "span", {
             'style': 'font-size: 12'})
         child.text = "Harvest XML metadata files and upload them into a SAEON CKAN metadata server"
+
         child = ET.SubElement(api, "br")
         child = ET.SubElement(api, "span", {
             'style': 'font-size: 12'})
         child.text = 'Arguments:'
+
         child = ET.SubElement(api, "br")
         child = ET.SubElement(api, "span", {
             'style': 'font-size: 12'})
         child.text = '* source_dir: the directory on the local file system where the text files reside'
-        child = ET.SubElement(api, "br")
-        child = ET.SubElement(api, "span", {
-            'style': 'font-size: 12'})
-        child.text = '* upload_server_url: URL of server to which harvested records are to be uploaded'
-        child = ET.SubElement(api, "br")
-        child = ET.SubElement(api, "span", {
-            'style': 'font-size: 12'})
-        child.text = '* upload_user: user name to access upload_server_url'
-        child = ET.SubElement(api, "br")
-        child = ET.SubElement(api, "span", {
-            'style': 'font-size: 12'})
-        child.text = '* upload_password: password of user to access upload_server_url'
 
         return ET.tostring(root)
 
