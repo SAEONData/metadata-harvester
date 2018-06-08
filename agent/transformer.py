@@ -1,9 +1,11 @@
 import logging
 import xml.dom.minidom as minidom
 import declxml as xml
-from agent.standards import _get_xml_processor
+from agent.standards import get_xml_processor
+from agent.standards import transform_to_datacite
 
 logger = logging.getLogger(__name__)
+
 
 def _checkXmlStructure(data):
     """
@@ -48,7 +50,7 @@ def transform_record(record, settings):
         }
         return meta
 
-    xml_processor = _get_xml_processor(settings)
+    xml_processor = get_xml_processor(settings)
     if not xml_processor:
         meta['error'] = {
             'message': "Cannot transform standard {} yet".format(
@@ -59,7 +61,8 @@ def transform_record(record, settings):
     json_data = xml.parse_from_string(xml_processor, xml_data)
     meta['json_data'] = json_data
 
-    # datacite = transform_to_datacite(standard, json_data)
+    datacite = transform_to_datacite(settings, meta)
+    meta['datacite_data'] = datacite
 
     # meta['json_data']['additionalFields']['source_uri'] = uri
     # if len(self.getDefaultValues()) and len(meta.json_data):
