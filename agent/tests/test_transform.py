@@ -2,17 +2,16 @@
 import requests
 
 
-def harvest_folder(source_dir, standard):
+def harvest_folder(xml_data, title, standard):
     output = {'success': False}
 
     data = {
-        'kwargs': {
-            'source_dir': source_dir,
-            'standard': standard
-        }
+        'xmlData': xml_data,
+        'title': title,
+        'standard': standard
     }
     base = 'http://localhost:8080'
-    url = "{}/harvest".format(base)
+    url = "{}/transform".format(base)
     print(url)
     response = requests.post(
         url=url,
@@ -29,7 +28,15 @@ def harvest_folder(source_dir, standard):
 
 
 if __name__ == "__main__":
-    source_dir = '/home/mike/projects/harvester/data/CBERS'
+    xml_data = """
+<root>
+    <data>
+        <sceneId>1234</sceneId>
+        <productId>4567</productId>
+    </data>
+</root>
+    """
+    title = 'Test1'
     standard = 'CBERS'
-    output = harvest_folder(source_dir, standard)
+    output = harvest_folder(xml_data, title, standard)
     print(output)
