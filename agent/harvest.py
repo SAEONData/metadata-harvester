@@ -12,7 +12,7 @@ def _upload_record(record, upload_settings):
     output = {'success': False}
 
     data = {
-        'jsonData': json.dumps(record),
+        'json_data': json.dumps(record),
         'metadataType': 'DataCite'
     }
     url = "{}/jsonCreateMetadataAsJson".format(upload_settings.server_url)
@@ -87,7 +87,7 @@ def _get_xml_records(settings):
                 continue
 
             afile = open(fullpath)
-            records.append({'title': filename, 'xmlData': afile.read()})
+            records.append({'title': filename, 'xml_data': afile.read()})
             afile.close()
 
         if messages:
@@ -165,6 +165,6 @@ def harvest(kwargs):
         upload_settings['password'] = kwargs.get('upload_password')
 
     results = _harvest_records(source_settings)
-    # results = _upload_record(meta.jsonData, upload_settings)
+    # results = _upload_record(meta.json_data, upload_settings)
 
     return results

@@ -1,14 +1,9 @@
 import logging
 import xml.dom.minidom as minidom
 import declxml as xml
+from agent.standards import _get_xml_processor
 
 logger = logging.getLogger(__name__)
-
-cbers_processor = xml.dictionary('root/data', [
-    xml.string('productId'),
-    xml.integer('sceneId')
-])
-
 
 def _checkXmlStructure(data):
     """
@@ -21,12 +16,6 @@ def _checkXmlStructure(data):
         return None
     except Exception as e:
         return str(e)
-
-
-def _get_xml_processor(settings):
-    if settings['standard'] == 'CBERS':
-        return cbers_processor
-    return None
 
 
 def _clean_xml_data(data):
@@ -48,8 +37,16 @@ def transform_record(record, settings):
     meta['standard'] = settings['standard']
     logger.info('Parse record {}'.format(title))
 
-    data = _clean_xml_data(record['xmlData'])
-    meta['xml'] = str(data)
+    xml_data = _clean_xml_data(record['xml_data'])
+    meta['xml_data'] = str(xml_data)
+
+    failed = _checkXmlStructure(xml_data)
+    if failed:
+        meta['error'] = {
+            'message': "Invalid Xml in document {}: {}".format(
+                title, failed),
+        }
+        return meta
 
     xml_processor = _get_xml_processor(settings)
     if not xml_processor:
@@ -59,31 +56,25 @@ def transform_record(record, settings):
         }
         return meta
 
-    failed = _checkXmlStructure(data)
-    if failed:
-        meta['error'] = {
-            'message': "Invalid Xml in document {}: {}".format(
-                title, failed),
-        }
-        return meta
+    json_data = xml.parse_from_string(xml_processor, xml_data)
+    meta['json_data'] = json_data
 
-    json_dict = xml.parse_from_string(xml_processor, data)
-    meta['jsonData'] = json_dict
+    # datacite = transform_to_datacite(standard, json_data)
 
-    # meta['jsonData']['additionalFields']['source_uri'] = uri
-    # if len(self.getDefaultValues()) and len(meta.jsonData):
+    # meta['json_data']['additionalFields']['source_uri'] = uri
+    # if len(self.getDefaultValues()) and len(meta.json_data):
     #     self._addDefaultValues(meta)
 
-    # if len(self.getSupplementaryValues()) and len(meta.jsonData):
+    # if len(self.getSupplementaryValues()) and len(meta.json_data):
     #     self._addSupplementaryValues(meta)
 
-    # if self.doiRange != 'none' and len(meta.jsonData):
+    # if self.doiRange != 'none' and len(meta.json_data):
     #     self._addIdentifier(meta)
 
-    if meta['jsonData'].get('title') and \
-       meta['jsonData']['title'].strip() != "":
+    if meta['json_data'].get('title') and \
+       meta['json_data']['title'].strip() != "":
         # set the metadata object title to that of the xml title
-        meta['title'] = meta['jsonData']['title']
+        meta['title'] = meta['json_data']['title']
 
     msg = {
         'eventType': "MetadataCreate",
@@ -107,8 +98,8 @@ def transform(kwargs):
         output['error'] = {'message': 'record title is required'}
         return output
 
-    if kwargs.get('xmlData'):
-        record['xmlData'] = kwargs.get('xmlData')
+    if kwargs.get('xml_data'):
+        record['xml_data'] = kwargs.get('xml_data')
     else:
         output['error'] = {'message': 'xml data is required'}
         return output
