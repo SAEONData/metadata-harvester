@@ -8,20 +8,21 @@ from .transformer import transform_record
 logger = logging.getLogger(__name__)
 
 
-def _upload_record(record, upload_settings):
-    output = {'success': False}
+def _upload_record(result, settings):
 
+    result['upload_error'] = None
+    result['upload_success'] = False
     data = {
-        'json_data': json.dumps(record),
+        'jsonData': json.dumps(result['datacite_data']),
         'metadataType': 'DataCite'
     }
-    url = "{}/jsonCreateMetadataAsJson".format(upload_settings.server_url)
-    if config.upload_user:
+    url = "{}/jsonCreateMetadataAsJson".format(settings['upload_server_url'])
+    if settings.get('upload_user'):
         response = requests.post(
             url=url,
             data=data,
             auth=requests.auth.HTTPBasicAuth(
-                config.upload_user, config.upload_password),
+                settings['upload_user'], settings['upload_password']),
         )
     else:
         response = requests.post(
@@ -29,13 +30,20 @@ def _upload_record(record, upload_settings):
             data=data
         )
     if response.status_code != 200:
-        output['error'] = 'Request failed with return code: %s' % (
+        result['upload_error'] = 'Request failed with return code: %s' % (
             response.status_code)
-        return output
+        print('Uploader: {upload_success}: {upload_error}'.format(**result))
+        return result
 
-    output['success'] = True
-    output['results'] = response.text
-    return output
+    upload_result = json.loads(response.text)
+    if upload_result.get('status') == 'failed':
+        result['upload_error'] = upload_result('msg', 'Unknown')
+        print('Uploader: {upload_success}: {upload_error}'.format(**result))
+        return result
+
+    result['upload_success'] = True
+    print('Uploader: {upload_success}'.format(**result))
+    return result
 
 
 def _get_xml_records(settings):
@@ -119,6 +127,7 @@ def _harvest_records(settings):
 
     for record in records:
         result = transform_record(record, settings)
+        result = _upload_record(result, settings)
         output['records'].append(result)
 
     output['success'] = True
@@ -127,44 +136,42 @@ def _harvest_records(settings):
 
 def harvest(kwargs):
     output = {'success': False}
-    source_settings = {}
+    settings = {}
 
-    source_settings['source_dir'] = config.source_dir
+    settings['source_dir'] = config.source_dir
     if kwargs.get('source_dir'):
-        source_settings['source_dir'] = kwargs.get('source_dir')
+        settings['source_dir'] = kwargs.get('source_dir')
 
-        if not os.path.exists(source_settings['source_dir']):
+        if not os.path.exists(settings['source_dir']):
             output['error'] = 'source_dir {} does not exists'.format(
-                source_settings['source_dir'])
+                settings['source_dir'])
             return output
 
-        if os.listdir(source_settings['source_dir']) == []:
+        if os.listdir(settings['source_dir']) == []:
             output['error'] = 'source_dir {} is empty'.format(
-                source_settings['source_dir'])
+                settings['source_dir'])
             return output
 
-    source_settings['transport'] = config.transport
+    settings['transport'] = config.transport
     if kwargs.get('transport'):
-        source_settings['transport'] = kwargs.get('transport')
+        settings['transport'] = kwargs.get('transport')
 
-    source_settings['standard'] = config.standard
+    settings['standard'] = config.standard
     if kwargs.get('standard'):
-        source_settings['standard'] = kwargs.get('standard')
+        settings['standard'] = kwargs.get('standard')
 
-    upload_settings = {}
-    upload_settings['server_url'] = config.upload_server_url
+    settings['upload_server_url'] = config.upload_server_url
     if kwargs.get('upload_server_url'):
-        upload_settings['server_url'] = kwargs.get('upload_server_url')
+        settings['upload_server_url'] = kwargs.get('upload_server_url')
 
-    upload_settings['user'] = config.upload_user
+    settings['upload_user'] = config.upload_user
     if kwargs.get('upload_user'):
-        upload_settings['user'] = kwargs.get('upload_user')
+        settings['upload_user'] = kwargs.get('upload_user')
 
-    upload_settings['password'] = config.upload_password
+    settings['upload_password'] = config.upload_password
     if kwargs.get('upload_password'):
-        upload_settings['password'] = kwargs.get('upload_password')
+        settings['upload_password'] = kwargs.get('upload_password')
 
-    results = _harvest_records(source_settings)
-    # results = _upload_record(meta.json_data, upload_settings)
+    results = _harvest_records(settings)
 
     return results

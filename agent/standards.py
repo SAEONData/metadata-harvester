@@ -10,7 +10,6 @@ EMPTY_JSON_DATACITE = {
     "xsiSchema": "http://datacite.org/schema/kernel-3",
     "owner": "",
     "subjects": [],
-    "additionalFields": {},
     "geoLocations": [],
     "userVersion": "",
     "description": [],
@@ -26,7 +25,10 @@ EMPTY_JSON_DATACITE = {
     "resourceTypeGeneral": "",
     "bounds": [],
     "alternateIdentifiers": [],
-    "identifier": {}
+    "identifier": {},
+    "additionalFields": {
+        'onlineResources': ''
+    },
 }
 
 
@@ -69,6 +71,9 @@ def transform_to_datacite(settings, meta):
     }]
 
     # Defaults should come from settings
+    dc_data['creators'] = [
+        {'creatorName': 'SANSA'}
+    ]
     dc_data['contributors'] = [
         {'contributorType': 'DataCurator',
          'contributorName': "South African National Space Agency, PO Box 484, Silverton 0127, Gauteng, South Africa"},

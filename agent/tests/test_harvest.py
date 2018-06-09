@@ -1,4 +1,4 @@
-# import json
+import json
 import requests
 
 
@@ -24,7 +24,7 @@ def harvest_folder(source_dir, standard):
         return output
 
     output['success'] = True
-    output['results'] = response.text
+    output['results'] = json.loads(response.text)
     return output
 
 
@@ -32,4 +32,5 @@ if __name__ == "__main__":
     source_dir = '/home/mike/projects/harvester/data/CBERS'
     standard = 'CBERS'
     output = harvest_folder(source_dir, standard)
-    print(output)
+    for record in output['results']['records']:
+        print('Valid: {valid}, Upload: {upload_success} {upload_error}'.format(**record))
