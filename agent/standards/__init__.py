@@ -1,0 +1,28 @@
+EMPTY_JSON_DATACITE = {
+    "titles": [],
+    "subtitle": "",
+    "contributors": [],
+    "userId": "",
+    "xsiSchema": "http://datacite.org/schema/kernel-3",
+    "owner": "",
+    "subjects": [],
+    "geoLocations": [],
+    "userVersion": "",
+    "description": [],
+    "publicationYear": "",
+    "relatedIdentifiers": [],
+    "creators": [],
+    "publisher": "",
+    "dates": [],
+    "language": "eng",
+    "rights": [],
+    "resourceType": "",
+    "sizes": [],
+    "resourceTypeGeneral": "",
+    "bounds": [],
+    "alternateIdentifiers": [],
+    "identifier": {},
+    "additionalFields": {
+        'onlineResources': ''
+    },
+}

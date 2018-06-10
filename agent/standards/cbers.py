@@ -1,35 +1,6 @@
 import declxml
 import json
-
-
-EMPTY_JSON_DATACITE = {
-    "titles": [],
-    "subtitle": "",
-    "contributors": [],
-    "userId": "",
-    "xsiSchema": "http://datacite.org/schema/kernel-3",
-    "owner": "",
-    "subjects": [],
-    "geoLocations": [],
-    "userVersion": "",
-    "description": [],
-    "publicationYear": "",
-    "relatedIdentifiers": [],
-    "creators": [],
-    "publisher": "",
-    "dates": [],
-    "language": "eng",
-    "rights": [],
-    "resourceType": "",
-    "sizes": [],
-    "resourceTypeGeneral": "",
-    "bounds": [],
-    "alternateIdentifiers": [],
-    "identifier": {},
-    "additionalFields": {
-        'onlineResources': ''
-    },
-}
+from agent.standards import EMPTY_JSON_DATACITE
 
 
 def transform_to_datacite(settings, meta):
@@ -90,12 +61,6 @@ def transform_to_datacite(settings, meta):
         'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
     }
     return dc_data
-
-
-def get_xml_processor(settings):
-    if settings['standard'] == 'CBERS':
-        return cbers_processor
-    return None
 
 
 cbers_processor = declxml.dictionary('root/data', [

@@ -2,7 +2,7 @@ import json
 import requests
 
 
-def harvest_folder(xml_data, title, standard):
+def transform_record(xml_data, title, standard):
     output = {'success': False}
 
     data = {
@@ -125,5 +125,5 @@ if __name__ == "__main__":
     xml_data = XML_DATA
     title = 'Test1'
     standard = 'CBERS'
-    output = harvest_folder(xml_data, title, standard)
+    output = transform_record(xml_data, title, standard)
     print('Success: {}, Valid: {}'.format(output['success'], output['results']['valid']))

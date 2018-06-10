@@ -33,4 +33,4 @@ if __name__ == "__main__":
     standard = 'CBERS'
     output = harvest_folder(source_dir, standard)
     for record in output['results']['records']:
-        print('Valid: {valid}, Upload: {upload_success} {upload_error}'.format(**record))
+        print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
