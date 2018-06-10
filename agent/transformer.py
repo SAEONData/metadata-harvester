@@ -1,8 +1,8 @@
 import logging
 import xml.dom.minidom as minidom
 import declxml as xml
-from agent.standards import get_xml_processor
-from agent.standards import transform_to_datacite
+from agent.standard import get_xml_processor
+from agent.standard import transform_to_datacite
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,8 @@ def transform_record(record, settings):
     @param: record thet contains the xml metadata and settings
     """
 
-    meta = {'valid': False, 'error': None}
+    meta = {'valid': False, 'error': None,
+            'upload_success': False, 'upload_error': 'No attempt'}
     title = record['title']
     meta['title'] = title
     meta['standard'] = settings['standard']
@@ -58,7 +59,13 @@ def transform_record(record, settings):
         }
         return meta
 
-    json_data = xml.parse_from_string(xml_processor, xml_data)
+    try:
+        json_data = xml.parse_from_string(xml_processor, xml_data)
+    except xml.MissingValue as e:
+        meta['error'] = {
+            'message': "{}".format(e)
+        }
+        return meta
     meta['json_data'] = json_data
 
     datacite = transform_to_datacite(settings, meta)

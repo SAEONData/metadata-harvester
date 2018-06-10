@@ -6,10 +6,8 @@ def harvest_folder(source_dir, standard):
     output = {'success': False}
 
     data = {
-        'kwargs': {
-            'source_dir': source_dir,
-            'standard': standard
-        }
+        'source_dir': source_dir,
+        'standard': standard
     }
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
@@ -29,8 +27,14 @@ def harvest_folder(source_dir, standard):
 
 
 if __name__ == "__main__":
-    source_dir = '/home/mike/projects/harvester/data/CBERS'
-    standard = 'CBERS'
+    # source_dir = '/home/mike/projects/harvester/data/CBERS'
+    # standard = 'CBERS'
+    source_dir = '/home/mike/projects/harvester/data/SPOT6'
+    standard = 'SPOT6'
     output = harvest_folder(source_dir, standard)
+    print(source_dir)
     for record in output['results']['records']:
-        print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
+        if record['valid']:
+            print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
+        else:
+            print('{title}: Valid = {valid}, Error = {error}, Upload = {upload_success} {upload_error}'.format(**record))

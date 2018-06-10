@@ -37,7 +37,7 @@ def _upload_record(result, settings):
 
     upload_result = json.loads(response.text)
     if upload_result.get('status') == 'failed':
-        result['upload_error'] = upload_result('msg', 'Unknown')
+        result['upload_error'] = upload_result.get('msg', 'Unknown')
         print('Uploader: {upload_success}: {upload_error}'.format(**result))
         return result
 
@@ -127,7 +127,8 @@ def _harvest_records(settings):
 
     for record in records:
         result = transform_record(record, settings)
-        result = _upload_record(result, settings)
+        if result['valid']:
+            result = _upload_record(result, settings)
         output['records'].append(result)
 
     output['success'] = True

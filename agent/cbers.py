@@ -1,6 +1,6 @@
 import declxml
 import json
-from agent.standards import EMPTY_JSON_DATACITE
+from .config import EMPTY_JSON_DATACITE
 
 
 def transform_to_datacite(settings, meta):
@@ -63,7 +63,7 @@ def transform_to_datacite(settings, meta):
     return dc_data
 
 
-cbers_processor = declxml.dictionary('root/data', [
+xml_processor = declxml.dictionary('root/data', [
     declxml.string('productId', required=False),
     declxml.string('sceneId', required=False),
     declxml.string('satelliteId', required=False),
