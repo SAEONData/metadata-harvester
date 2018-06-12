@@ -1,0 +1,4 @@
+TODO
+
+* allow transformer defaults to be supplied as a params
+* add validation in transformers for missing fields - no checking currently
