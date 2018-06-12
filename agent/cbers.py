@@ -42,14 +42,17 @@ def transform_to_datacite(settings, meta):
     }]
 
     # Defaults should come from settings
-    dc_data['creators'] = [
-        {'creatorName': 'SANSA'}
-    ]
+    dc_data['creators'] = [{
+        'creatorName': 'Airbus Defence and Space SAS',
+        'affiliation': 'Airbus Defence and Space SAS, 5 rue des Satellites BP 14 359, 31030 Toulouse cedex 4, France',
+    }]
     dc_data['contributors'] = [
         {'contributorType': 'DataCurator',
-         'contributorName': "South African National Space Agency, PO Box 484, Silverton 0127, Gauteng, South Africa"},
+         'contributorName': "South African National Space Agency",
+         'affiliation': "SANSA, PO Box 484, Silverton 0127, Gauteng, South Africa"},
         {'contributorType': 'Distributor',
-         'contributorName': "South African Environmental Observation Network, SAEON, PO Box 2600, Pretoria, 0001, South Africa"}
+         'contributorName': "South African Environmental Observation Network, SAEON, PO Box 2600, Pretoria, 0001, South Africa",
+         'affiliation': "SAEON, PO Box 2600, Pretoria, 0001, South Africa"}
     ]
     dc_data['publisher'] = 'South African National Space Agency'
     dc_data['resourceType'] = 'Dataset'
