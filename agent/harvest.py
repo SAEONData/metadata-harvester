@@ -12,11 +12,22 @@ def _upload_record(result, settings):
 
     result['upload_error'] = None
     result['upload_success'] = False
+    upload_method = settings.get(
+        'upload_method', 'jsonCreateMetadataAsJson')
+
     data = {
         'jsonData': json.dumps(result['datacite_data']),
-        'metadataType': 'DataCite'
+        'metadataType': 'datacite'
     }
-    url = "{}/jsonCreateMetadataAsJson".format(settings['upload_server_url'])
+    # upload_method = 'jsonapi_metadata_create'
+    # data = {
+    #     'institution': 'webtide',
+    #     'repository': 'sansa1',
+    #     'metadata_schema': 'datacite',
+    #     'metadata_json': json.dumps(result['datacite_data']),
+    # }
+    url = "{}/{}".format(settings['upload_server_url'], upload_method)
+    print(url)
     if settings.get('upload_user'):
         response = requests.post(
             url=url,
@@ -172,6 +183,9 @@ def harvest(kwargs):
     settings['upload_password'] = config.upload_password
     if kwargs.get('upload_password'):
         settings['upload_password'] = kwargs.get('upload_password')
+
+    if kwargs.get('upload_method'):
+        settings['upload_method'] = kwargs.get('upload_method')
 
     results = _harvest_records(settings)
 

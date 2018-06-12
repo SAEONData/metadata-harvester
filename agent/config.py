@@ -16,10 +16,12 @@ source_dir = '/home/mike/projects/harvester/data/CBERS'
 # server_url = 'http://qa.dirisa.org/Institutions/pixley-ka-seme/pixley-ka-seme/metadata'
 
 # Upload data
-# upload_server_url = 'http://ckan.dirisa.org:9090/Institutions/webtide1/sansa3/metadata'
-upload_server_url = 'http://qa.dirisa.org/Institutions/pixley-ka-seme/pixley-ka-seme/metadata'
-upload_user = 'admin'
-upload_password = 'editbew123'
+# upload_server_url = 'http://qa.dirisa.org/Institutions/pixley-ka-seme/pixley-ka-seme/metadata'
+# upload_user = 'admin'
+# upload_password = ''
+upload_server_url = 'http://ckan.dirisa.org:9091/Institutions/webtide/sansa1/metadata'
+upload_user = ''
+upload_password = ''
 
 EMPTY_JSON_DATACITE = {
     "titles": [],

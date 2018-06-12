@@ -7,7 +7,8 @@ def harvest_folder(source_dir, standard):
 
     data = {
         'source_dir': source_dir,
-        'standard': standard
+        'standard': standard,
+        'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/sansa2/metadata'
     }
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
