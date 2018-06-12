@@ -31,21 +31,25 @@ def harvest_folder(source_dir, standard):
 
 
 if __name__ == "__main__":
-    # source_dir = '/home/mike/projects/harvester/data/CBERS'
-    # standard = 'CBERS'
-    source_dir = '/home/mike/projects/harvester/data/SPOT6'
-    standard = 'SPOT6'
 
-    output = harvest_folder(source_dir, standard)
+    sources = [{
+        'source_dir': '/home/mike/projects/harvester/data/CBERS',
+        'standard': 'CBERS'
+    }, {
+        'source_dir': '/home/mike/projects/harvester/data/SPOT6',
+        'standard': 'SPOT6'
+    }]
+    for source in sources:
+        output = harvest_folder(source['source_dir'], source['standard'])
 
-    results = output['results']
-    if not output.get('success', False):
-        print('Harvest failed, reason: {}'.format(results.get('error', 'unknown')))
-        sys.exit()
+        results = output['results']
+        if not output.get('success', False):
+            print('Harvest failed, reason: {}'.format(results.get('error', 'unknown')))
+            sys.exit()
 
-    print('Harvest {}'.format(output['success']))
-    for record in results['records']:
-        if record['valid']:
-            print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
-        else:
-            print('{title}: Valid = {valid}, Error = {error}, Upload = {upload_success} {upload_error}'.format(**record))
+        print('Harvest {}'.format(output['success']))
+        for record in results['records']:
+            if record['valid']:
+                print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
+            else:
+                print('{title}: Valid = {valid}, Error = {error}, Upload = {upload_success} {upload_error}'.format(**record))
