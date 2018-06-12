@@ -1,5 +1,6 @@
 import json
 import requests
+import sys
 
 
 def harvest_folder(source_dir, standard):
@@ -7,8 +8,9 @@ def harvest_folder(source_dir, standard):
 
     data = {
         'source_dir': source_dir,
+        'transport': 'FileSystem',
         'standard': standard,
-        'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/sansa2/metadata'
+        'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/sansa3/metadata'
     }
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
@@ -22,8 +24,9 @@ def harvest_folder(source_dir, standard):
             response.status_code)
         return output
 
-    output['success'] = True
-    output['results'] = json.loads(response.text)
+    results = json.loads(response.text)
+    output['results'] = results
+    output['success'] = results['success']
     return output
 
 
@@ -32,9 +35,16 @@ if __name__ == "__main__":
     # standard = 'CBERS'
     source_dir = '/home/mike/projects/harvester/data/SPOT6'
     standard = 'SPOT6'
+
     output = harvest_folder(source_dir, standard)
-    print(source_dir)
-    for record in output['results']['records']:
+
+    results = output['results']
+    if not output.get('success', False):
+        print('Harvest failed, reason: {}'.format(results.get('error', 'unknown')))
+        sys.exit()
+
+    print('Harvest {}'.format(output['success']))
+    for record in results['records']:
         if record['valid']:
             print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
         else:

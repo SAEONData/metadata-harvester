@@ -5,11 +5,15 @@ from .spot6 import xml_processor as spot6_processor
 
 
 def transform_to_datacite(settings, meta):
-    if settings['standard'] == 'CBERS':
+    standard = settings.get('standard')
+    if not standard:
+        return {'datacite': None, 'errors': ['Standard not provided', ]}
+    if standard == 'CBERS':
         return transform_cbers(settings, meta)
-    elif settings['standard'] == 'SPOT6':
+    elif standard == 'SPOT6':
         return transform_spot6(settings, meta)
-    return None
+    return {'datacite': None,
+            'errors': ['Unknown standard "{}"'.format(standard)]}
 
 
 def get_xml_processor(settings):

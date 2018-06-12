@@ -58,38 +58,10 @@ def _upload_record(result, settings):
 
 
 def _get_xml_records(settings):
+    result = {'records': [], 'errors': []}
     records = None
-    standard = settings['standard']
-    transport = settings['transport']
-    if transport == "FTP":
-        ftp = FTPTransport(settings.url, settings.username, settings.password)
-        if ftp.message:
-            error_message = ftp.message
-            raise RuntimeError('%s\n%s' % (ftp.message, settings.getUrl()))
-        records = ftp.getFiles()
-
-    elif transport in ['CSW', 'CSW-NEW', 'CSW-SANSA']:
-        csw = CSWTransport(settings.getUrl(), "", settings.username, settings.password, standard, transport=transport)
-        if csw.message:
-            error_message = csw.message
-            raise RuntimeError('%s\n%s' % (csw.message, settings.getUrl()))
-        records = csw.getRecords()
-
-    elif transport in ['OAI', 'OAI-Metacat']:
-        oai = OAITransport(url=settings.getUrl(), standard=standard, transport=transport, substitutionUrl=settings.substitutionUrl)
-        if oai.message:
-            error_message = oai.message
-            raise RuntimeError('%s\n%s' % (oai.message, settings.getUrl()))
-        records = oai.getRecords()
-
-    elif transport == "HTTP":
-        http = HTTPTransport(settings.url, settings.username, settings.password)
-        if http.message:
-            error_message = http.message
-            raise RuntimeError('%s\n%s' % (http.message, settings.getUrl()))
-        records = http.files
-
-    elif transport == "FileSystem":
+    transport = settings.get('transport')
+    if transport == "FileSystem":
         files = []
         for afile in os.listdir(settings['source_dir']):
             if afile.lower().endswith('xml'):
@@ -110,15 +82,16 @@ def _get_xml_records(settings):
             afile.close()
 
         if messages:
-            raise RuntimeError(', '.join(messages))
+            result['errors'] = messages
+            return result
 
     else:
-        msg = 'Harvester transport protocol "%s" not found' % transport or 'Unknown'
-        error_message = msg
-        raise RuntimeError(
-            '%s\n%s' % (error_message, settings.getUrl()))
+        msg = 'Harvester transport protocol "{}" not found'.format(transport)
+        result['errors'].append(msg)
+        return result
 
-    return records
+    result['records'] = records
+    return result
 
 
 def _harvest_records(settings):
@@ -128,10 +101,11 @@ def _harvest_records(settings):
     output = {'success': False, 'records': []}
 
     logger.info('Harvesting: %s' % settings)
-    records = _get_xml_records(settings)
+    result = _get_xml_records(settings)
 
+    records = result['records']
     if records is None or len(records) == 0:
-        output['error'] = 'No record found'
+        output['error'] = result['errors']
         return output
 
     logger.info('Harvester: %s records found in file' % len(records))
@@ -164,11 +138,11 @@ def harvest(kwargs):
                 settings['source_dir'])
             return output
 
-    settings['transport'] = config.transport
+    # settings['transport'] = config.transport
     if kwargs.get('transport'):
         settings['transport'] = kwargs.get('transport')
 
-    settings['standard'] = config.standard
+    # settings['standard'] = config.standard
     if kwargs.get('standard'):
         settings['standard'] = kwargs.get('standard')
 

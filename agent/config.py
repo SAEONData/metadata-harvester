@@ -8,8 +8,8 @@ import_user = 'admin'
 import_password = ''
 
 # Harvest Options
-transport = 'FileSystem'
-standard = 'CBERS'
+# transport = 'FileSystem'
+# standard = 'CBERS'
 
 # Data Options
 source_dir = '/home/mike/projects/harvester/data/CBERS'

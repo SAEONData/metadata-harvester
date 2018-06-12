@@ -33,11 +33,17 @@ def transform_record(record, settings):
     @param: record thet contains the xml metadata and settings
     """
 
-    meta = {'valid': False, 'error': None,
+    meta = {'valid': False, 'error': None, 'title': 'Unknown',
             'upload_success': False, 'upload_error': 'No attempt'}
+    standard = settings.get('standard')
+    if not standard:
+        meta['error'] = {
+            'message': "Stardard not provided"
+        }
+        return meta
+    meta['standard'] = standard
     title = record['title']
     meta['title'] = title
-    meta['standard'] = settings['standard']
     logger.info('Parse record {}'.format(title))
 
     xml_data = _clean_xml_data(record['xml_data'])
