@@ -63,6 +63,9 @@ def transform_to_datacite(settings, meta):
         'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
         'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
     }
+    dc_data['subjects'].append({'subject': 'MUX Sensor Type'})
+    dc_data['subjects'].append({'subject': 'WGS84 Reference System'})
+    dc_data['subjects'].append({'subject': 'Multibanded'})
     return dc_data
 
 

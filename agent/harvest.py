@@ -19,7 +19,6 @@ def _upload_record(result, settings):
         'jsonData': json.dumps(result['datacite_data']),
         'metadataType': 'datacite'
     }
-    # upload_method = 'jsonapi_metadata_create'
     # data = {
     #     'institution': 'webtide',
     #     'repository': 'sansa1',
@@ -114,6 +113,8 @@ def _harvest_records(settings):
         result = transform_record(record, settings)
         if result['valid']:
             result = _upload_record(result, settings)
+        else:
+            logger.info('Harvester: Invalid record')
         output['records'].append(result)
 
     output['success'] = True
