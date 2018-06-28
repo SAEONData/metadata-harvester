@@ -27,18 +27,23 @@ def _upload_record(result, settings):
     # }
     url = "{}/{}".format(settings['upload_server_url'], upload_method)
     print(url)
-    if settings.get('upload_user'):
-        response = requests.post(
-            url=url,
-            data=data,
-            auth=requests.auth.HTTPBasicAuth(
-                settings['upload_user'], settings['upload_password']),
-        )
-    else:
-        response = requests.post(
-            url=url,
-            data=data
-        )
+    try:
+        if settings.get('upload_user'):
+                response = requests.post(
+                    url=url,
+                    data=data,
+                    auth=requests.auth.HTTPBasicAuth(
+                        settings['upload_user'], settings['upload_password']),
+                )
+        else:
+            response = requests.post(
+                url=url,
+                data=data
+            )
+    except Exception as e:
+        result['upload_error'] = 'Request failed with exception {}.'.format(e)
+        print('Uploader: {upload_success}: {upload_error}'.format(**result))
+        return result
     if response.status_code != 200:
         result['upload_error'] = 'Request failed with return code: %s' % (
             response.status_code)
@@ -67,6 +72,10 @@ def _get_xml_records(settings):
                 files.append(afile)
         logger.info('About to process {} files'.format(len(files)))
 
+        if len(files) == 0:
+            result['errors'] = \
+                'No files in dir {}'.format(settings['source_dir'])
+            return result
         records = []
         messages = []
         for filename in files:
@@ -125,7 +134,8 @@ def harvest(kwargs):
     output = {'success': False}
     settings = {}
 
-    settings['source_dir'] = config.source_dir
+    if hasattr(config, 'source_dir'):
+        settings['source_dir'] = config.source_dir
     if kwargs.get('source_dir'):
         settings['source_dir'] = kwargs.get('source_dir')
 
@@ -134,31 +144,39 @@ def harvest(kwargs):
                 settings['source_dir'])
             return output
 
-        if os.listdir(settings['source_dir']) == []:
+        files = os.listdir(settings['source_dir'])
+        if len(files) == 0:
             output['error'] = 'source_dir {} is empty'.format(
                 settings['source_dir'])
             return output
 
-    # settings['transport'] = config.transport
+    if hasattr(config, 'transport'):
+        settings['transport'] = config.transport
     if kwargs.get('transport'):
         settings['transport'] = kwargs.get('transport')
 
-    # settings['standard'] = config.standard
+    if hasattr(config, 'standard'):
+        settings['standard'] = config.standard
     if kwargs.get('standard'):
         settings['standard'] = kwargs.get('standard')
 
-    settings['upload_server_url'] = config.upload_server_url
+    if hasattr(config, 'upload_server_url'):
+        settings['upload_server_url'] = config.upload_server_url
     if kwargs.get('upload_server_url'):
         settings['upload_server_url'] = kwargs.get('upload_server_url')
 
-    settings['upload_user'] = config.upload_user
+    if hasattr(config, 'upload_user'):
+        settings['upload_user'] = config.upload_user
     if kwargs.get('upload_user'):
         settings['upload_user'] = kwargs.get('upload_user')
 
-    settings['upload_password'] = config.upload_password
+    if hasattr(config, 'upload_password'):
+        settings['upload_password'] = config.upload_password
     if kwargs.get('upload_password'):
         settings['upload_password'] = kwargs.get('upload_password')
 
+    if hasattr(config, 'upload_method'):
+        settings['upload_method'] = config.upload_method
     if kwargs.get('upload_method'):
         settings['upload_method'] = kwargs.get('upload_method')
 
