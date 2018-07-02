@@ -113,6 +113,54 @@ class TransformerTest(unittest.TestCase):
             {'subject': 'MUX Sensor Type'},
             output['datacite_data']['subjects'])
 
+    def test_08_transform_spot_6(self):
+        with open('./agent/tests/SPOT6_sample.xml') as afile:
+            xml_data = afile.read()
+
+        settings = {
+            'title': 'TestRecord1',
+            'xml_data': xml_data,
+            'standard': 'SPOT6'
+        }
+        output = transform(kwargs=settings)
+        self.assertEqual(output.get('success'), True)
+        self.assertEqual(output.get('valid'), True)
+        self.assertIn(
+            {'subject': 'SPOT 6'},
+            output['datacite_data']['subjects'])
+
+    def test_09_transform_cbers_mux(self):
+        with open('./agent/tests/CBERS_MUX_sample.xml') as afile:
+            xml_data = afile.read()
+
+        settings = {
+            'title': 'TestRecord1',
+            'xml_data': xml_data,
+            'standard': 'CBERS_MUX'
+        }
+        output = transform(kwargs=settings)
+        self.assertEqual(output.get('success'), True)
+        self.assertEqual(output.get('valid'), True)
+        self.assertIn(
+            {'subject': 'MUX Sensor Type'},
+            output['datacite_data']['subjects'])
+
+    def test_10_transform_cbers_p5m(self):
+        with open('./agent/tests/CBERS_P5M_sample.xml') as afile:
+            xml_data = afile.read()
+
+        settings = {
+            'title': 'TestRecord1',
+            'xml_data': xml_data,
+            'standard': 'CBERS_P5M'
+        }
+        output = transform(kwargs=settings)
+        self.assertEqual(output.get('success'), True)
+        self.assertEqual(output.get('valid'), True)
+        self.assertIn(
+            {'subject': 'P5M Sensor Type'},
+            output['datacite_data']['subjects'])
+
 
 if __name__ == '__main__':
     unittest.main()
