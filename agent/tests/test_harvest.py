@@ -4,9 +4,10 @@ import sys
 
 
 def harvest_folder(source_dir, standard, upload_server_url=None):
+    output = {'success': False}
+
     if upload_server_url is None:
         upload_server_url = 'http://ckan.dirisa.org:9090/Institutions/webtide/sansa4/metadata'
-    output = {'success': False}
 
     data = {
         'source_dir': source_dir,
@@ -15,16 +16,26 @@ def harvest_folder(source_dir, standard, upload_server_url=None):
         'upload_server_url': upload_server_url,
         'upload_method': 'jsonCreateMetadataAsJson',
     }
-    base = 'http://localhost:8080'
+    base = 'http://es.co.za'
+    base = 'http://xml-harvester.dirisa.org'
     url = "{}/harvest".format(base)
     print(url)
-    response = requests.post(
-        url=url,
-        data=data,
-    )
+    # print(data)
+    try:
+        response = requests.post(
+            url=url,
+            data=data,
+        )
+    except Exception as e:
+        output['results'] = {
+            'error': 'Request to {} failed with {}'.format(url, e)}
+        return output
+
     if response.status_code != 200:
-        output['error'] = 'Request failed with return code: %s' % (
-            response.status_code)
+        import pdb; pdb.set_trace()
+        output['results'] = {
+            'error': 'Request to {} failed with code {}'.format(
+                url, response.status_code)}
         return output
 
     results = json.loads(response.text)

@@ -13,7 +13,7 @@ import_password = ''
 
 # Data Options
 source_dir = '/home/mike/projects/harvester/data/CBERS'
-# server_url = 'http://qa.dirisa.org/Institutions/pixley-ka-seme/pixley-ka-seme/metadata'
+server_url = 'http://qa.dirisa.org/Institutions/webtide/metadata'
 
 # Upload data
 # upload_server_url = 'http://qa.dirisa.org/Institutions/pixley-ka-seme/pixley-ka-seme/metadata'

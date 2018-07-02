@@ -128,4 +128,6 @@ def transform(kwargs):
 
     results = transform_record(record, source_settings)
 
+    results['success'] = results.get('valid', False)
+
     return results
