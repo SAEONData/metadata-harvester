@@ -1,9 +1,9 @@
-from .cbers_mux import transform_to_datacite as transform_cbers_mux
-from .cbers_mux import xml_processor as cbers_mux_processor
-from .cbers_p5m import transform_to_datacite as transform_cbers_p5m
-from .cbers_p5m import xml_processor as cbers_p5m_processor
-from .spot6 import transform_to_datacite as transform_spot6
-from .spot6 import xml_processor as spot6_processor
+from .standards.cbers_mux import transform_to_datacite as transform_cbers_mux
+from .standards.cbers_mux import xml_processor as cbers_mux_processor
+from .standards.cbers_p5m import transform_to_datacite as transform_cbers_p5m
+from .standards.cbers_p5m import xml_processor as cbers_p5m_processor
+from .standards.spot6 import transform_to_datacite as transform_spot6
+from .standards.spot6 import xml_processor as spot6_processor
 
 
 def transform_to_datacite(settings, meta):

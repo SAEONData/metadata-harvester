@@ -1,3 +1,4 @@
+from setuptools import find_packages
 from setuptools import setup
 
 setup(
@@ -8,7 +9,7 @@ setup(
     author='Mike Metcalfe',
     author_email='mike@webtide.co.za',
     license='MIT',
-    packages=['agent'],
+    packages=find_packages(),
     install_requires=[
         'requests',
         'cherrypy',

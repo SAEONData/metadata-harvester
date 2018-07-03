@@ -1,6 +1,6 @@
 import declxml
 import json
-from .config import EMPTY_JSON_DATACITE
+from agent.config import EMPTY_JSON_DATACITE
 
 
 def transform_to_datacite(settings, meta):
@@ -63,9 +63,9 @@ def transform_to_datacite(settings, meta):
         'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
         'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
     }
-    dc_data['subjects'].append({'subject': 'MUX Sensor Type'})
+    dc_data['subjects'].append({'subject': 'P5M Sensor Type'})
     dc_data['subjects'].append({'subject': 'WGS84 Reference System'})
-    dc_data['subjects'].append({'subject': 'Multibanded'})
+    dc_data['subjects'].append({'subject': 'Single Banded'})
     return dc_data
 
 

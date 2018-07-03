@@ -16,8 +16,7 @@ def harvest_folder(source_dir, standard, upload_server_url=None):
         'upload_server_url': upload_server_url,
         'upload_method': 'jsonCreateMetadataAsJson',
     }
-    base = 'http://es.co.za'
-    base = 'http://xml-harvester.dirisa.org'
+    base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
     print(url)
     # print(data)
@@ -32,7 +31,6 @@ def harvest_folder(source_dir, standard, upload_server_url=None):
         return output
 
     if response.status_code != 200:
-        import pdb; pdb.set_trace()
         output['results'] = {
             'error': 'Request to {} failed with code {}'.format(
                 url, response.status_code)}
@@ -56,10 +54,11 @@ if __name__ == "__main__":
             'standard': 'CBERS_P5M',
             'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/cbers_p5m/metadata',
         },
-        # {
-        #     'source_dir': '/home/mike/projects/harvester/data/SPOT6',
-        #     'standard': 'SPOT6'
-        # }
+        {
+            'source_dir': '/home/mike/projects/harvester/data/SPOT6',
+            'standard': 'SPOT6',
+            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/spot6/metadata',
+        }
     ]
     for source in sources:
         output = harvest_folder(

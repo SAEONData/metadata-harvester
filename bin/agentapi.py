@@ -4,8 +4,14 @@ import cherrypy
 import xml.etree.ElementTree as ET
 from agent.config import server_port
 from agent.harvest import harvest
-from agent.utils import get_request_host
 from agent.transformer import transform
+
+
+def get_request_host(request):
+    host = request.headers.get('hostd')
+    if not host:
+        host = request.headers.get('host')
+    return host
 
 
 class AgentAPI(object):
