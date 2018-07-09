@@ -15,7 +15,7 @@
 .idea/*
 .installed.cfg
 .settings
-XML_Harvesting_Agent.egg-info/*
+Metadata_Harvesting_Agent.egg-info/*
 build
 develop-eggs
 dist

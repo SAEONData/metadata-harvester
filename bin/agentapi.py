@@ -38,7 +38,7 @@ class AgentAPI(object):
         root = ET.Element("html")
         body = ET.SubElement(root, "body")
         child = ET.SubElement(body, "h2")
-        child.text = 'Welcome to the SAEON XML Harvesting Agent'
+        child.text = 'Welcome to the SAEON Metadata Harvesting Agent'
         api = ET.SubElement(body, "h3")
         api.text = 'API'
         ET.SubElement(api, "br")
@@ -49,7 +49,7 @@ class AgentAPI(object):
         child = ET.SubElement(api, "br")
         child = ET.SubElement(api, "span", {
             'style': 'font-size: 12'})
-        child.text = "Harvest XML metadata files and upload them into a SAEON CKAN metadata server"
+        child.text = "Harvest metadata metadata files and upload them into a SAEON CKAN metadata server"
 
         child = ET.SubElement(api, "br")
         child = ET.SubElement(api, "span", {
