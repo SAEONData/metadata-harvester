@@ -2,11 +2,11 @@ import json
 import requests
 
 
-def transform_record(xml_data, title, standard):
+def transform_record(input_data, title, standard):
     output = {'success': False}
 
     data = {
-        'xml_data': xml_data,
+        'input_data': input_data,
         'title': title,
         'standard': standard
     }
@@ -122,8 +122,14 @@ XML_DATA = """
 """
 
 if __name__ == "__main__":
-    xml_data = XML_DATA
+    input_data = XML_DATA
     title = 'Test1'
-    standard = 'CBERS'
-    output = transform_record(xml_data, title, standard)
-    print('Success: {}, Valid: {}'.format(output['success'], output['results']['valid']))
+    standard = 'CBERS_MUX'
+    output = transform_record(input_data, title, standard)
+    results = output['results']
+    if not results.get('valid'):
+        print('Success: False, Error: {}'.format(results['error']))
+    else:
+        print('Success: {}, Valid: {}'.format(
+            output['success'], results['valid']))
+        print('DataCite Record: {}'.format(results['datacite_data']))

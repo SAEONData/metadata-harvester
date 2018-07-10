@@ -29,7 +29,7 @@ def _clean_xml_data(data):
 
 def transform_record(record, settings):
     """
-    @summary: extract the metadata from the given xml record
+    @summary: extract the metadata from the given record
     @param: record thet contains the xml metadata and settings
     """
 
@@ -129,7 +129,7 @@ def transform(kwargs):
     if kwargs.get('input_data'):
         record['input_data'] = kwargs.get('input_data')
     else:
-        output['error'] = {'message': 'xml data is required'}
+        output['error'] = {'message': 'input data is required'}
         return output
 
     if kwargs.get('standard'):
