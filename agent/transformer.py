@@ -1,7 +1,7 @@
 import logging
 import xml.dom.minidom as minidom
-import declxml as xml
-from agent.standard import get_xml_processor
+import declxml
+from agent.standard import get_processor
 from agent.standard import transform_to_datacite
 
 logger = logging.getLogger(__name__)
@@ -46,32 +46,44 @@ def transform_record(record, settings):
     meta['title'] = title
     logger.info('Parse record {}'.format(title))
 
-    xml_data = _clean_xml_data(record['xml_data'])
-    meta['xml_data'] = str(xml_data)
+    meta['input_data'] = record['input_data']
 
-    failed = _checkXmlStructure(xml_data)
-    if failed:
-        meta['error'] = {
-            'message': "Invalid Xml in document {}: {}".format(
-                title, failed),
-        }
-        return meta
-
-    xml_processor = get_xml_processor(settings)
-    if not xml_processor:
+    processor = get_processor(settings)
+    if not processor:
         meta['error'] = {
             'message': "Cannot transform standard {} yet".format(
                 settings['standard']),
         }
         return meta
 
-    try:
-        json_data = xml.parse_from_string(xml_processor, xml_data)
-    except xml.MissingValue as e:
-        meta['error'] = {
-            'message': "{}".format(e)
-        }
-        return meta
+    if standard in ('CBERS_MUX', 'CBERS_P5M', 'SPOT6'):
+        input_data = _clean_xml_data(record['input_data'])
+        meta['input_data'] = str(input_data)
+
+        failed = _checkXmlStructure(input_data)
+        if failed:
+            meta['error'] = {
+                'message': "Invalid Xml in document {}: {}".format(
+                    title, failed),
+            }
+            return meta
+
+        try:
+            json_data = declxml.parse_from_string(processor, input_data)
+        except declxml.MissingValue as e:
+            meta['error'] = {
+                'message': "{}".format(e)
+            }
+            return meta
+    else:
+        try:
+            json_data = processor(meta, record['input_data'])
+        except declxml.MissingValue as e:
+            meta['error'] = {
+                'message': "{}".format(e)
+            }
+            return meta
+
     meta['json_data'] = json_data
 
     datacite = transform_to_datacite(settings, meta)
@@ -114,8 +126,8 @@ def transform(kwargs):
         output['error'] = {'message': 'record title is required'}
         return output
 
-    if kwargs.get('xml_data'):
-        record['xml_data'] = kwargs.get('xml_data')
+    if kwargs.get('input_data'):
+        record['input_data'] = kwargs.get('input_data')
     else:
         output['error'] = {'message': 'xml data is required'}
         return output

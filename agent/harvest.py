@@ -61,15 +61,14 @@ def _upload_record(result, settings):
     return result
 
 
-def _get_xml_records(settings):
+def _get_metadata_records(settings):
     result = {'records': [], 'errors': []}
     records = None
     transport = settings.get('transport')
     if transport == "FileSystem":
         files = []
         for afile in os.listdir(settings['source_dir']):
-            if afile.lower().endswith('xml'):
-                files.append(afile)
+            files.append(afile)
         logger.info('About to process {} files'.format(len(files)))
 
         if len(files) == 0:
@@ -86,7 +85,7 @@ def _get_xml_records(settings):
                 continue
 
             afile = open(fullpath)
-            records.append({'title': filename, 'xml_data': afile.read()})
+            records.append({'title': filename, 'input_data': afile.read()})
             afile.close()
 
         if messages:
@@ -109,7 +108,7 @@ def _harvest_records(settings):
     output = {'success': False, 'records': []}
 
     logger.info('Harvesting: %s' % settings)
-    result = _get_xml_records(settings)
+    result = _get_metadata_records(settings)
 
     records = result['records']
     if records is None or len(records) == 0:
