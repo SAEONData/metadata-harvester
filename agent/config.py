@@ -3,7 +3,7 @@ server_port = 8080
 server_url = 'http://localhost:{}'.format(server_port)
 
 # Importer details
-import_url = 'http://oa.dirisa.org'
+import_url = 'http://qa.dirisa.org'
 import_user = 'admin'
 import_password = ''
 

@@ -4,7 +4,7 @@ from agent.config import EMPTY_JSON_DATACITE
 
 
 def transform_to_datacite(settings, meta):
-    # Initialisatio Hack
+    # Initialisation
     dc_data = json.loads(json.dumps(EMPTY_JSON_DATACITE))
     json_data = meta['json_data']
 
