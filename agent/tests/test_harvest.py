@@ -45,28 +45,28 @@ def harvest_folder(source_dir, standard, upload_server_url=None):
 if __name__ == "__main__":
 
     sources = [
-        # {
-        #     # 'source_dir': '/home/mike/projects/harvester/data/CBERS_MUX',
-        #     'source_dir': './agent/tests/cbers_mux',
-        #     'standard': 'CBERS_MUX',
-        #     'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests1/metadata',
-        # }, {
-        #     # 'source_dir': '/home/mike/projects/harvester/data/CBERS_P5M',
-        #     'source_dir': './agent/tests/cbers_p5m',
-        #     'standard': 'CBERS_P5M',
-        #     'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests1/metadata',
-        # },
-        # {
-        #     # 'source_dir': '/home/mike/projects/harvester/data/SPOT6',
-        #     'source_dir': './agent/tests/spot6',
-        #     'standard': 'SPOT6',
-        #     'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests1/metadata',
-        # },
+        {
+            # 'source_dir': '/home/mike/projects/harvester/data/CBERS_MUX',
+            'source_dir': './agent/tests/cbers_mux',
+            'standard': 'CBERS_MUX',
+            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+        }, {
+            # 'source_dir': '/home/mike/projects/harvester/data/CBERS_P5M',
+            'source_dir': './agent/tests/cbers_p5m',
+            'standard': 'CBERS_P5M',
+            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+        },
+        {
+            # 'source_dir': '/home/mike/projects/harvester/data/SPOT6',
+            'source_dir': './agent/tests/spot6',
+            'standard': 'SPOT6',
+            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+        },
         {
             # 'source_dir': '/home/mike/projects/harvester/data/lansat',
             'source_dir': './agent/tests/lansat8',
             'standard': 'LANSAT8',
-            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittest2/metadata',
+            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
         }
     ]
     for source in sources:

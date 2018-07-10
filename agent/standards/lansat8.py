@@ -17,6 +17,10 @@ def text_processor(meta, data):
         if row.startswith('END'):
             continue
         row_list = row.split('=')
+        if len(row_list) == 1 and len(row_list[0]) == 0:
+            print('text_processor {}: ignore empty row'.format(
+                meta['title']))
+            continue
         if len(row_list) != 2:
             print('text_processor {}: cannot process row {}'.format(
                 meta['title'], row))
