@@ -1,4 +1,4 @@
-# Harvest XML metadata files and upload them into a SAEON CKAN metadata server
+# Harvest metadata files and upload them into a SAEON CKAN metadata server
 
 ## Deployment
 
@@ -18,7 +18,7 @@ and its remaining package dependencies with:
 
 ### JSON API
 #### harvest
-Harvest XML metadata files and upload them into a SAEON CKAN metadata server
+Harvest metadata files and upload them into a SAEON CKAN metadata server
 
 ##### Arguments:
 * transport: transport protocol to gather data. Currently only supports "FileSystem".
