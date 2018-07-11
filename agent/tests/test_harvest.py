@@ -1,6 +1,5 @@
 import json
 import requests
-import sys
 
 
 def harvest_folder(source_dir, standard, upload_server_url=None):
@@ -18,7 +17,7 @@ def harvest_folder(source_dir, standard, upload_server_url=None):
     }
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
-    print(url)
+    # print(url)
     # print(data)
     try:
         response = requests.post(
@@ -63,12 +62,12 @@ if __name__ == "__main__":
             'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
         },
         {
-            # 'source_dir': '/home/mike/projects/harvester/data/lansat',
-            'source_dir': './agent/tests/lansat8',
-            'standard': 'LANSAT8',
+            'source_dir': './agent/tests/landsat8',
+            'standard': 'LANDSAT8',
             'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
         }
     ]
+    all_good = True
     for source in sources:
         output = harvest_folder(
             source['source_dir'],
@@ -80,12 +79,21 @@ if __name__ == "__main__":
             if isinstance(error, dict):
                 error = error.get('error', 'unknown')
             print('Harvest failed, reason: {}'.format(error))
-            sys.exit()
+            all_good = False
+            continue
 
-        print('Harvest {}'.format(output['success']))
+        # print('Harvest {}'.format(output['success']))
         results = output['results']
         for record in results['records']:
             if record['valid']:
-                print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
+                pass
+                # print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
             else:
                 print('{title}: Valid = {valid}, Error = {error}, Upload = {upload_success} {upload_error}'.format(**record))
+                all_good = False
+                continue
+
+    if all_good:
+        print('Tests completed successfully ')
+    else:
+        print('Tests complete - see issues above')

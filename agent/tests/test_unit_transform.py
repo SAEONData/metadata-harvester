@@ -19,12 +19,12 @@ class TransformerTest(unittest.TestCase):
         self.assertEqual(output.get('success'), False)
         self.assertEqual(
             output['error']['message'],
-            'xml data is required')
+            'input data is required')
 
     def test_03_transform_no_standard(self):
         settings = {
             'title': 'TestRecord1',
-            'xml_data': 'Hello'
+            'input_data': 'Hello'
         }
         output = transform(kwargs=settings)
         self.assertEqual(output.get('success'), False)
@@ -35,7 +35,7 @@ class TransformerTest(unittest.TestCase):
     def test_04_transform_invalid_xml(self):
         settings = {
             'title': 'TestRecord1',
-            'xml_data': """
+            'input_data': """
 <root>
     <data>
         <productId>19603</productId>
@@ -46,13 +46,13 @@ class TransformerTest(unittest.TestCase):
         output = transform(kwargs=settings)
         self.assertEqual(output.get('success'), False)
         self.assertIn(
-            'Invalid Xml in document',
+            'Cannot transform standard Hello',
             output['error']['message'])
 
     def test_05_transform_unknown_standard(self):
         settings = {
             'title': 'TestRecord1',
-            'xml_data': '<root> <data> <productId>19603</productId> </data> </root>',
+            'input_data': '<root> <data> <productId>19603</productId> </data> </root>',
             'standard': 'Hello'
         }
         output = transform(kwargs=settings)
@@ -64,7 +64,7 @@ class TransformerTest(unittest.TestCase):
     def test_06_transform_missing_fields(self):
         settings = {
             'title': 'TestRecord1',
-            'xml_data': """
+            'input_data': """
 <root>
     <data>
         <dummy>19603</dummy>
@@ -82,7 +82,7 @@ class TransformerTest(unittest.TestCase):
     def test_07_transform_valid(self):
         settings = {
             'title': 'TestRecord1',
-            'xml_data': """
+            'input_data': """
 <root>
     <data>
         <productId>19603</productId>
@@ -114,12 +114,12 @@ class TransformerTest(unittest.TestCase):
             output['datacite_data']['subjects'])
 
     def test_08_transform_spot_6(self):
-        with open('./agent/tests/SPOT6_sample.xml') as afile:
-            xml_data = afile.read()
+        with open('./agent/tests/spot6/SPOT6_sample.xml') as afile:
+            input_data = afile.read()
 
         settings = {
             'title': 'TestRecord1',
-            'xml_data': xml_data,
+            'input_data': input_data,
             'standard': 'SPOT6'
         }
         output = transform(kwargs=settings)
@@ -130,12 +130,12 @@ class TransformerTest(unittest.TestCase):
             output['datacite_data']['subjects'])
 
     def test_09_transform_cbers_mux(self):
-        with open('./agent/tests/CBERS_MUX_sample.xml') as afile:
-            xml_data = afile.read()
+        with open('./agent/tests/cbers_mux/CBERS_MUX_sample.xml') as afile:
+            input_data = afile.read()
 
         settings = {
             'title': 'TestRecord1',
-            'xml_data': xml_data,
+            'input_data': input_data,
             'standard': 'CBERS_MUX'
         }
         output = transform(kwargs=settings)
@@ -146,12 +146,12 @@ class TransformerTest(unittest.TestCase):
             output['datacite_data']['subjects'])
 
     def test_10_transform_cbers_p5m(self):
-        with open('./agent/tests/CBERS_P5M_sample.xml') as afile:
-            xml_data = afile.read()
+        with open('./agent/tests/cbers_p5m/CBERS_P5M_sample.xml') as afile:
+            input_data = afile.read()
 
         settings = {
             'title': 'TestRecord1',
-            'xml_data': xml_data,
+            'input_data': input_data,
             'standard': 'CBERS_P5M'
         }
         output = transform(kwargs=settings)
@@ -159,6 +159,22 @@ class TransformerTest(unittest.TestCase):
         self.assertEqual(output.get('valid'), True)
         self.assertIn(
             {'subject': 'P5M Sensor Type'},
+            output['datacite_data']['subjects'])
+
+    def test_11_transform_landsat8(self):
+        with open('./agent/tests/landsat8/landsat8_sample.txt') as afile:
+            input_data = afile.read()
+
+        settings = {
+            'title': 'TestRecord1',
+            'input_data': input_data,
+            'standard': 'LANDSAT8'
+        }
+        output = transform(kwargs=settings)
+        self.assertEqual(output.get('success'), True)
+        self.assertEqual(output.get('valid'), True)
+        self.assertIn(
+            {'subject': 'Landsat 8'},
             output['datacite_data']['subjects'])
 
 
