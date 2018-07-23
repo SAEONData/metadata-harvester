@@ -32,5 +32,5 @@ Harvest metadata files and upload them into a SAEON CKAN metadata server
 
 ## Unit Tests
 
-python agent/tests/test_unit_transform.py
+py.test agent/tests/test_unit_transform.py
 
