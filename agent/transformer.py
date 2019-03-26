@@ -57,6 +57,7 @@ def transform_record(record, settings):
         return meta
 
     if standard in ('CBERS_MUX', 'CBERS_P5M', 'SPOT6'):
+        # If xml based metadta standard
         input_data = _clean_xml_data(record['input_data'])
         meta['input_data'] = str(input_data)
 
@@ -76,6 +77,7 @@ def transform_record(record, settings):
             }
             return meta
     else:
+        # Other non-xml based standards
         try:
             json_data = processor(meta, record['input_data'])
         except declxml.MissingValue as e:
