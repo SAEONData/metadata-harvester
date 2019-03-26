@@ -106,9 +106,9 @@ def transform_record(record, settings):
 
     msg = {
         'eventType': "MetadataCreate",
-        'category': "Record Created",
+        'category': "Record Transformed",
         'logType': 'Success',
-        'message': "Created document {title}".format(**meta),
+        'message': "Transform document {title}".format(**meta),
     }
     print(msg)
     meta['valid'] = True

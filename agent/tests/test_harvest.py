@@ -2,18 +2,17 @@ import json
 import requests
 
 
-def harvest_folder(source_dir, standard, upload_server_url=None):
+def harvest_folder(settings):
     output = {'success': False}
 
-    if upload_server_url is None:
-        upload_server_url = 'http://ckan.dirisa.org:9090/Institutions/webtide/sansa4/metadata'
-
     data = {
-        'source_dir': source_dir,
+        'source_dir': settings.get('source_dir', '/agent/tests/cbers_mux'),
+        'standard': settings.get('standard', 'CBERS_MUX'),
+        'upload_server_url': settings.get('upload_server_url'),
+        'upload_user': settings.get('upload_user'),
+        'upload_password': settings.get('upload_password'),
         'transport': 'FileSystem',
-        'standard': standard,
-        'upload_server_url': upload_server_url,
-        'upload_method': 'jsonCreateMetadataAsJson',
+        'upload_method': settings.get('upload_method', 'jsonCreateMetadataAsJson'),
     }
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
@@ -48,31 +47,39 @@ if __name__ == "__main__":
             # 'source_dir': '/home/mike/projects/harvester/data/CBERS_MUX',
             'source_dir': './agent/tests/cbers_mux',
             'standard': 'CBERS_MUX',
-            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+            # 'upload_server_url': 'https://ckan.sansa.saeoss.org/organization/webtide/metadata_collection/unittest1/metadata',
+            'upload_server_url': 'https://ckan.sansa.saeoss.org',
+            'upload_user': 'mikemets',
+            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
+            'upload_method': 'api/action/metadata_record_create',
         }, {
-            # 'source_dir': '/home/mike/projects/harvester/data/CBERS_P5M',
             'source_dir': './agent/tests/cbers_p5m',
             'standard': 'CBERS_P5M',
-            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+            'upload_server_url': 'https://ckan.sansa.saeoss.org',
+            'upload_user': 'mikemets',
+            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
+            'upload_method': 'api/action/metadata_record_create',
         },
         {
-            # 'source_dir': '/home/mike/projects/harvester/data/SPOT6',
             'source_dir': './agent/tests/spot6',
             'standard': 'SPOT6',
-            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+            'upload_server_url': 'https://ckan.sansa.saeoss.org',
+            'upload_user': 'mikemets',
+            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
+            'upload_method': 'api/action/metadata_record_create',
         },
         {
             'source_dir': './agent/tests/landsat8',
             'standard': 'LANDSAT8',
-            'upload_server_url': 'http://ckan.dirisa.org:9090/Institutions/webtide/unittests3/metadata',
+            'upload_server_url': 'https://ckan.sansa.saeoss.org',
+            'upload_user': 'mikemets',
+            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
+            'upload_method': 'api/action/metadata_record_create',
         }
     ]
     all_good = True
     for source in sources:
-        output = harvest_folder(
-            source['source_dir'],
-            source['standard'],
-            source.get('upload_server_url', None))
+        output = harvest_folder(source)
 
         if not output.get('success', False):
             error = output.get('results', 'unknown')

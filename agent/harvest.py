@@ -15,20 +15,31 @@ def _upload_record(result, settings):
     upload_method = settings.get(
         'upload_method', 'jsonCreateMetadataAsJson')
 
-    data = {
-        'jsonData': json.dumps(result['datacite_data']),
-        'metadataType': 'datacite'
-    }
     # data = {
-    #     'institution': 'webtide',
-    #     'repository': 'sansa1',
-    #     'metadata_schema': 'datacite',
-    #     'metadata_json': json.dumps(result['datacite_data']),
+    #     'jsonData': json.dumps(result['datacite_data']),
+    #     'metadataType': 'datacite'
     # }
+    data = {
+        'owner_org': 'webtide',
+        'metadata_collection_id': 'unittest1',
+        'metadata_standard_id': 'datacite-4-2',
+        'metadata_json': json.dumps(result['datacite_data']),
+        # 'infrastructures': [{'id': 'sansa'}],
+        'deserialize_json': 'true',
+        # '__ac_name': settings['upload_user'],
+        # '__ac_password': 'mike01',  # settings['upload_password'],
+    }
+    headers = {
+        'Authorization': settings['upload_password'],
+    }
     url = "{}/{}".format(settings['upload_server_url'], upload_method)
     print(url)
+    print(data)
+    print(headers)
     try:
-        if settings.get('upload_user'):
+        # CKAN create_metadata(self, institution, repository, **kwargs)
+
+        if False:  # settings.get('upload_user'):
                 response = requests.post(
                     url=url,
                     data=data,
@@ -38,13 +49,16 @@ def _upload_record(result, settings):
         else:
             response = requests.post(
                 url=url,
-                data=data
+                data=data,
+                headers=headers
             )
     except Exception as e:
+        print(response.text)
         result['upload_error'] = 'Request failed with exception {}.'.format(e)
         print('Uploader: {upload_success}: {upload_error}'.format(**result))
         return result
     if response.status_code != 200:
+        print(response.text)
         result['upload_error'] = 'Request failed with return code: %s' % (
             response.status_code)
         print('Uploader: {upload_success}: {upload_error}'.format(**result))
