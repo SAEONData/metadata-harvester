@@ -51,7 +51,7 @@ def transform_to_datacite(settings, meta):
             title_dict = {'title': title, 'titleType': ''}
             dc_data['titles'].append(title_dict)
         if key == 'FILE_DATE':
-            date_dict = {'date': json_data[key], 'dateType': 'Created'}
+            date_dict = {'date': json_data[key][:10], 'dateType': 'Created'}
             dc_data['dates'].append(date_dict)
             dc_data['publicationYear'] = json_data[key][:4]
         elif key == 'CORNER_UL_LAT_PRODUCT':
@@ -60,15 +60,17 @@ def transform_to_datacite(settings, meta):
                json_data.get('CORNER_UL_LON_PRODUCT') and \
                json_data.get('CORNER_LL_LON_PRODUCT'):
                 dc_data['geoLocations'] = [{
-                    'geoLocationBox': '{} {} {} {}'.format(
-                        json_data['CORNER_UL_LAT_PRODUCT'],
-                        json_data['CORNER_LL_LAT_PRODUCT'],
-                        json_data['CORNER_UL_LON_PRODUCT'],
-                        json_data['CORNER_LL_LON_PRODUCT'])}]
+                    'geoLocationBox': {
+                        'northBoundLatitude': json_data['CORNER_UL_LAT_PRODUCT'],
+                        'southBoundLatitude': json_data['CORNER_LL_LAT_PRODUCT'],
+                        'westBoundLongitude': json_data['CORNER_UL_LON_PRODUCT'],
+                        'eastBoundLongitude': json_data['CORNER_UR_LON_PRODUCT']
+                    }
+                }]
         elif key == 'LANDSAT_SCENE_ID':
             alt_dict = {
                 'alternateIdentifier': json_data[key],
-                'dateType': 'Landsat Scene ID'}
+                'alternateIdentifierType': 'Landsat Scene ID'}
             dc_data['alternateIdentifiers'].append(alt_dict)
 
     # Defaults should come from settings
@@ -79,18 +81,22 @@ def transform_to_datacite(settings, meta):
 
     dc_data['contributors'] = [{
         'contributorName': 'SANSA',
+        'contributorType': 'DataCurator',
         'affiliation': 'South African National Space Agency~DataCurator~PO Box 484, Silverton 0127, Gauteng, South Africa'
     }, {
         'contributorName': 'SAEON',
+        'contributorType': 'Distributor',
         'affiliation': 'South African Environmental Observation Network~Distributor~SAEON, PO Box 2600, Pretoria, 0001, South Africa'
     }]
     dc_data['publisher'] = 'South African National Space Agency'
-    dc_data['description'] = [{
+    dc_data['descriptions'] = [{
         'description': 'The Landsat program, originally known as the Earth Resources Technology Satellite (ERTS), was proposed in 1965 by the US Geological Survey (USGS) as a civilian satellite program. NASA started building the first satellite in 1970 and have launched 6 spacecraft successfully (Landsat 6 was lost at launch). In December 2009 all Landsat archive products were made available free to the public on the USGS website.'
         'Landsat 8 carries the Operational Land Imager (OLI) and the Thermal Infrared Sensor (TIRS) data recorder. The OLI sensor includes two additional bands compared to previous Landsat missions: a coastal aerosol band and a cirrus cloud band. The TIRS sensor provides data in two bands with different wavelengths and is resampled to 30m from 100m acquisition resolution. All products are provided in the 16-bit data range and have improved radiometric and geometric performance. Landsat 8 is offset from the Landsat 7 orbit by 8 days giving a shorter revisit time between the two satellites.',
         'descriptionType': 'Abstract'}]
-    dc_data['resourceType'] = 'Satellite Data'
-    dc_data['resourceTypeGeneral'] = 'Dataset'
+    dc_data['resourceType'] = {
+        'resourceType': 'Satellite Data',
+        'resourceTypeGeneral': 'Dataset'
+    }
     dc_data['subjects'].append({'subject': 'Sensor Type: Optical'})
     dc_data['subjects'].append({'subject': 'Reference System: Worldwide Reference System 2 (WRS2)'})
     dc_data['subjects'].append({'subject': 'Scanner Type: Push Broom Optical Scanner'})
@@ -107,9 +113,12 @@ def transform_to_datacite(settings, meta):
     dc_data['subjects'].append({'subject': 'TIRS'})
     dc_data['subjects'].append({'subject': '30m resampled'})
     dc_data['subjects'].append({'subject': '100m acquired'})
-    dc_data['rights'] = [{
-        'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
-        'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0/'}]
+    dc_data['rightsList'] = [
+        {
+            'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
+            'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
+        }
+    ]
     dc_data['language'] = 'en-us'
     dc_data['version'] = '3.1'
     dc_data['xsiSchema'] = [

@@ -13,11 +13,11 @@ def harvest_folder(settings):
         'upload_password': settings.get('upload_password'),
         'transport': 'FileSystem',
         'upload_method': settings.get('upload_method', 'jsonCreateMetadataAsJson'),
+        'upload_org_name': settings.get('upload_org_name'),
+        'upload_collection': settings.get('upload_collection'),
     }
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
-    # print(url)
-    # print(data)
     try:
         response = requests.post(
             url=url,
@@ -44,14 +44,14 @@ if __name__ == "__main__":
 
     sources = [
         {
-            # 'source_dir': '/home/mike/projects/harvester/data/CBERS_MUX',
             'source_dir': './agent/tests/cbers_mux',
             'standard': 'CBERS_MUX',
-            # 'upload_server_url': 'https://ckan.sansa.saeoss.org/organization/webtide/metadata_collection/unittest1/metadata',
             'upload_server_url': 'https://ckan.sansa.saeoss.org',
             'upload_user': 'mikemets',
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
+            'upload_org_name': 'webtide',
+            'upload_collection': 'unittest6',
         }, {
             'source_dir': './agent/tests/cbers_p5m',
             'standard': 'CBERS_P5M',
@@ -59,6 +59,8 @@ if __name__ == "__main__":
             'upload_user': 'mikemets',
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
+            'upload_org_name': 'webtide',
+            'upload_collection': 'unittest6',
         },
         {
             'source_dir': './agent/tests/spot6',
@@ -67,6 +69,8 @@ if __name__ == "__main__":
             'upload_user': 'mikemets',
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
+            'upload_org_name': 'webtide',
+            'upload_collection': 'unittest6',
         },
         {
             'source_dir': './agent/tests/landsat8',
@@ -75,6 +79,8 @@ if __name__ == "__main__":
             'upload_user': 'mikemets',
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
+            'upload_org_name': 'webtide',
+            'upload_collection': 'unittest6',
         }
     ]
     all_good = True
@@ -89,16 +95,22 @@ if __name__ == "__main__":
             all_good = False
             continue
 
-        # print('Harvest {}'.format(output['success']))
+        print('Harvest success {} : {}'.format(
+            output['success'], source.get('source_dir')))
         results = output['results']
         for record in results['records']:
-            if record['valid']:
-                pass
-                # print('{title}: Valid = {valid}, Upload = {upload_success} {upload_error}'.format(**record))
-            else:
-                print('{title}: Valid = {valid}, Error = {error}, Upload = {upload_success} {upload_error}'.format(**record))
+            if not record['valid']:
+                print('{title}: Transform = {valid}, Error = {error}'.format(**record))
                 all_good = False
                 continue
+            if not record['upload_success']:
+                print('{title}: Upload = {upload_success} {upload_error}'.format(**record))
+                all_good = False
+                continue
+            # if not record['validation_success']:
+            #     print('{title}: Validation = {validation_success} {validation_errors}'.format(**record))
+            #     all_good = False
+            #     continue
 
     if all_good:
         print('Tests completed successfully ')

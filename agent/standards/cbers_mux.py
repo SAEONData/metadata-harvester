@@ -1,6 +1,7 @@
 import declxml
 import json
 from agent.config import EMPTY_JSON_DATACITE
+# from agent.standards import get_unique_identifier
 
 
 def transform_to_datacite(settings, meta):
@@ -19,8 +20,8 @@ def transform_to_datacite(settings, meta):
     )})
     dc_data['dates'].append({
         'date': '{}/{}'.format(
-            json_data['imagingStartTime'],
-            json_data['imagingStopTime']),
+            json_data['imagingStartTime'][:10],
+            json_data['imagingStopTime'])[:10],
         'dateType': 'Collected'})
     dc_data['publicationYear'] = \
         json_data.get('productDate', '').split('-')[0]
@@ -55,17 +56,35 @@ def transform_to_datacite(settings, meta):
          'affiliation': "SAEON, PO Box 2600, Pretoria, 0001, South Africa"}
     ]
     dc_data['publisher'] = 'South African National Space Agency'
-    dc_data['resourceType'] = 'Dataset'
-    dc_data['description'].append({
+    dc_data['resourceType'] = {
+        'resourceType': 'XML',
+        'resourceTypeGeneral': 'Dataset'
+    }
+    dc_data['descriptions'].append({
         'descriptionType': 'Abstract',
         'description': "The China–Brazil Earth Resources Satellite program (CBERS) is a technological cooperation program between Brazil and China. CBERS satellites has a number of different sensors depending on the satellite. This is the CBERS({satelliteId}) collecting in {instrumentMode} with the sensor {sensorId} with a {productType} product type at a {productLevel} processing level.".format(**json_data)})
-    dc_data['rights'] = {
-        'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
-        'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
-    }
+    dc_data['rightsList'] = [
+        {
+            'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
+            'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
+        }
+    ]
     dc_data['subjects'].append({'subject': 'MUX Sensor Type'})
     dc_data['subjects'].append({'subject': 'WGS84 Reference System'})
     dc_data['subjects'].append({'subject': 'Multibanded'})
+    dc_data['language'] = 'en-US'
+
+    # dc_data['identifier'] = {
+    #     "identifier": get_unique_identifier(),
+    #     "identifierType": "DOI"
+    # }
+    # dc_data['immutableResource'] = {
+    #     "resourceURL": "https://schema.datacite.org/meta/kernel-4.2/example/dummy.xml",
+    #     "resourceChecksum": "1f4d92f643bf831131f7bd26bdb6d3e3",
+    #     "checksumAlgorithm": "md5",
+    #     "resourceName": "Dummy Example",
+    #     "resourceDescription": "Dummy Example Description"
+    # }
     return dc_data
 
 

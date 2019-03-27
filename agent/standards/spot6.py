@@ -1,6 +1,7 @@
 import declxml
 import json
 from agent.config import EMPTY_JSON_DATACITE
+from agent.standards import append_non_duplicates
 
 
 def transform_to_datacite(settings, meta):
@@ -11,12 +12,12 @@ def transform_to_datacite(settings, meta):
     # Contruct from record
     dc_data['name'] = json_data['name']
     dc_data['titles'].append({'title': "Image archive product of SPOT 6 Satellite on {} for orbit {}".format(
-        json_data['production_date'][:16],
+        json_data['production_date'][:10],
         json_data['ORBIT_NUMBER'])})
     dc_data['dates'].append({
         'date': '{}/{}'.format(
-            json_data['START'][:16],
-            json_data['END'][:16]),
+            json_data['START'][:10],
+            json_data['END'][:10]),
         'dateType': 'Collected'})
     dc_data['publicationYear'] = \
         json_data.get('production_date', '').split('-')[0]
@@ -24,9 +25,15 @@ def transform_to_datacite(settings, meta):
     dc_data['subjects'].append({'subject': 'NOAMI'})
     dc_data['subjects'].append(
         {'subject': 'AstroSat Optical Modular Instrument'})
-    dc_data['subjects'].append({'subject': json_data['ORBIT_NUMBER']})
-    dc_data['subjects'].append({'subject': json_data['RECEIVING_STATION']})
-    dc_data['subjects'].append({'subject': json_data['ARCHIVING_CENTER']})
+    append_non_duplicates(
+        dc_data['subjects'],
+        {'subject': json_data['ORBIT_NUMBER']})
+    append_non_duplicates(
+        dc_data['subjects'],
+        {'subject': json_data['RECEIVING_STATION']})
+    append_non_duplicates(
+        dc_data['subjects'],
+        {'subject': json_data['ARCHIVING_CENTER']})
 
     dc_data['geoLocations'] = [{
         'geoLocation': {
@@ -52,14 +59,19 @@ def transform_to_datacite(settings, meta):
          'affiliation': "SAEON, PO Box 2600, Pretoria, 0001, South Africa"}
     ]
     dc_data['publisher'] = 'South African National Space Agency'
-    dc_data['resourceType'] = 'Dataset'
-    dc_data['description'].append({
+    dc_data['resourceType'] = {
+        'resourceType': 'XML',
+        'resourceTypeGeneral': 'Dataset'
+    }
+    dc_data['descriptions'].append({
         'descriptionType': 'Abstract',
         'description': u'The SPOT (Système Pour l’Observation de la Terre or System for Earth Observation) satellites are operated by SPOT Image (created in 1982), a subsidiary of EADS Astrium and based in Toulouse, France. The program was initiated by the French space agency, CNES (Centre national détudes spatiales) in the 1970s in collaboration with the Belgium (SSTC) and Swedish (SNSB) science and space agencies.'})
-    dc_data['rights'] = {
-        'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
-        'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
-    }
+    dc_data['rightsList'] = [
+        {
+            'rights': 'Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)',
+            'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
+        }
+    ]
     print(str(dc_data))
     return dc_data
 

@@ -12,46 +12,26 @@ def _upload_record(result, settings):
 
     result['upload_error'] = None
     result['upload_success'] = False
-    upload_method = settings.get(
-        'upload_method', 'jsonCreateMetadataAsJson')
+    upload_method = settings.get('upload_method')
 
-    # data = {
-    #     'jsonData': json.dumps(result['datacite_data']),
-    #     'metadataType': 'datacite'
-    # }
     data = {
-        'owner_org': 'webtide',
-        'metadata_collection_id': 'unittest1',
-        'metadata_standard_id': 'datacite-4-2',
+        'owner_org': settings['upload_org_name'],
+        'metadata_collection_id': settings['upload_collection'],
         'metadata_json': json.dumps(result['datacite_data']),
         # 'infrastructures': [{'id': 'sansa'}],
+        'metadata_standard_id': 'datacite-4-2',
         'deserialize_json': 'true',
-        # '__ac_name': settings['upload_user'],
-        # '__ac_password': 'mike01',  # settings['upload_password'],
     }
     headers = {
         'Authorization': settings['upload_password'],
     }
     url = "{}/{}".format(settings['upload_server_url'], upload_method)
-    print(url)
-    print(data)
-    print(headers)
     try:
-        # CKAN create_metadata(self, institution, repository, **kwargs)
-
-        if False:  # settings.get('upload_user'):
-                response = requests.post(
-                    url=url,
-                    data=data,
-                    auth=requests.auth.HTTPBasicAuth(
-                        settings['upload_user'], settings['upload_password']),
-                )
-        else:
-            response = requests.post(
-                url=url,
-                data=data,
-                headers=headers
-            )
+        response = requests.post(
+            url=url,
+            data=data,
+            headers=headers
+        )
     except Exception as e:
         print(response.text)
         result['upload_error'] = 'Request failed with exception {}.'.format(e)
@@ -71,7 +51,97 @@ def _upload_record(result, settings):
         return result
 
     result['upload_success'] = True
+    result['upload_result'] = upload_result
     print('Uploader: {upload_success}'.format(**result))
+    return result
+
+
+def _validate_record(result, settings):
+
+    result['validation_errors'] = []
+    result['validation_success'] = False
+    validation_method = settings.get(
+        'validation_method', 'metadata_record_validate')
+
+    data = {
+        'id': result['upload_result']['result']['id']
+    }
+    headers = {
+        'Authorization': settings['upload_password'],
+    }
+    url = "{}/{}".format(settings['upload_server_url'], validation_method)
+    try:
+        response = requests.post(
+            url=url,
+            data=data,
+            headers=headers
+        )
+    except Exception as e:
+        print(response.text)
+        result['validation_errors'].append(
+            'Request failed with exception {}.'.format(e))
+        return result
+
+    if response.status_code != 200:
+        result['validation_errors'].append(
+            'Request failed with return code: %s' % (response.status_code))
+        return result
+
+    validation_result = json.loads(response.text)
+    if validation_result.get('status') == 'failed':
+        result['validation_errors'].append(
+            validation_result.get('msg', 'Unknown'))
+        print('Uploader: {validation_success}: {validation_errors}'.format(**result))
+        return result
+
+    result['validation_success'] = True
+    print('Uploader: {validation_success}'.format(**result))
+    return result
+
+
+def _transition_record(result, settings):
+
+    result['transition_errors'] = []
+    result['transition_success'] = False
+    transition_method = settings.get(
+        'transition_method', 'metadata_record_workflow_state_transition')
+
+    data = {
+        'id': result['upload_result']['result']['id'],
+        'workflow_state_id': 'submit'
+    }
+    headers = {
+        'Authorization': settings['upload_password'],
+    }
+    url = "{}/{}".format(settings['upload_server_url'], transition_method)
+    try:
+        response = requests.post(
+            url=url,
+            data=data,
+            headers=headers
+        )
+    except Exception as e:
+        print(response.text)
+        result['transition_errors'].append(
+            'Request failed with exception {}.'.format(e))
+        return result
+
+    if response.status_code != 200:
+        print(response.text)
+        result['transition_error'].append(
+            'Request failed with return code: %s' % (response.status_code))
+        return result
+
+    transition_result = json.loads(response.text)
+    print(transition_result)
+    if transition_result.get('status') == 'failed':
+        result['transition_errors'].append(
+            transition_result.get('msg', 'Unknown'))
+        print('Uploader: {transition_success}: {transition_errors}'.format(**result))
+        return result
+
+    result['transition_success'] = True
+    print('Uploader: {transition_success}'.format(**result))
     return result
 
 
@@ -82,6 +152,8 @@ def _get_metadata_records(settings):
     if transport == "FileSystem":
         files = []
         for afile in os.listdir(settings['source_dir']):
+            if afile.endswith('.swp'):
+                continue
             files.append(afile)
         logger.info('About to process {} files'.format(len(files)))
 
@@ -136,7 +208,18 @@ def _harvest_records(settings):
         if result['valid']:
             result = _upload_record(result, settings)
         else:
-            logger.info('Harvester: Invalid record')
+            logger.info('Harvester: Invalid transformation')
+            continue
+
+        # if result['upload_success']:
+        #     result = _validate_record(result, settings)
+        # else:
+        #     logger.info('Harvester: Upload failed')
+        #     continue
+        # if result['validated']:
+        #     result = _submit_record(result, settings)
+        # if result['submitted']:
+        #     result = _publish_record(result, settings)
         output['records'].append(result)
 
     output['success'] = True
@@ -192,6 +275,16 @@ def harvest(kwargs):
         settings['upload_method'] = config.upload_method
     if kwargs.get('upload_method'):
         settings['upload_method'] = kwargs.get('upload_method')
+
+    if hasattr(config, 'upload_org_name'):
+        settings['upload_org_name'] = config.upload_org_name
+    if kwargs.get('upload_org_name'):
+        settings['upload_org_name'] = kwargs.get('upload_org_name')
+
+    if hasattr(config, 'upload_collection'):
+        settings['upload_collection'] = config.upload_collection
+    if kwargs.get('upload_collection'):
+        settings['upload_collection'] = kwargs.get('upload_collection')
 
     results = _harvest_records(settings)
 
