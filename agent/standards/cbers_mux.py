@@ -33,13 +33,38 @@ def transform_to_datacite(settings, meta):
     dc_data['subjects'].append({'subject': json_data['productLevel']})
 
     dc_data['geoLocations'] = [{
-        'geoLocation': {
-            'geoLocationBox': '{} {} {} {}'.format(
-                json_data['dataLowerLeftLat'],
-                json_data['dataLowerLeftLong'],
-                json_data['dataUpperRightLat'],
-                json_data['dataUpperRightLong']
-            )}
+        'geoLocationBox': {
+            'northBoundLatitude': json_data['dataUpperLeftLat'],
+            'southBoundLatitude': json_data['dataLowerLeftLat'],
+            'westBoundLongitude': json_data['dataUpperLeftLong'],
+            'eastBoundLongitude': json_data['dataUpperRightLong']
+        }
+    }]
+    dc_data['geoLocations'] = [{
+        'geoLocationPolygons': [{
+            'polygonPoints': [
+                {
+                    "pointLatitude": json_data['dataUpperLeftLat'],
+                    "pointLongitude": json_data['dataUpperLeftLong']
+                },
+                {
+                    "pointLatitude": json_data['dataLowerLeftLat'],
+                    "pointLongitude": json_data['dataLowerLeftLong']
+                },
+                {
+                    "pointLatitude": json_data['dataLowerRightLat'],
+                    "pointLongitude": json_data['dataLowerRightLong']
+                },
+                {
+                    "pointLatitude": json_data['dataUpperRightLat'],
+                    "pointLongitude": json_data['dataUpperRightLong']
+                },
+                {
+                    "pointLatitude": json_data['dataUpperLeftLat'],
+                    "pointLongitude": json_data['dataUpperLeftLong']
+                }
+            ]
+        }]
     }]
 
     # Defaults should come from settings

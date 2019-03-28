@@ -51,7 +51,7 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest6',
+            'upload_collection': 'unittest10',
         }, {
             'source_dir': './agent/tests/cbers_p5m',
             'standard': 'CBERS_P5M',
@@ -60,7 +60,7 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest6',
+            'upload_collection': 'unittest10',
         },
         {
             'source_dir': './agent/tests/spot6',
@@ -70,7 +70,7 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest6',
+            'upload_collection': 'unittest10',
         },
         {
             'source_dir': './agent/tests/landsat8',
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest6',
+            'upload_collection': 'unittest10',
         }
     ]
     all_good = True

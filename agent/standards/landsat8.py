@@ -60,12 +60,30 @@ def transform_to_datacite(settings, meta):
                json_data.get('CORNER_UL_LON_PRODUCT') and \
                json_data.get('CORNER_LL_LON_PRODUCT'):
                 dc_data['geoLocations'] = [{
-                    'geoLocationBox': {
-                        'northBoundLatitude': json_data['CORNER_UL_LAT_PRODUCT'],
-                        'southBoundLatitude': json_data['CORNER_LL_LAT_PRODUCT'],
-                        'westBoundLongitude': json_data['CORNER_UL_LON_PRODUCT'],
-                        'eastBoundLongitude': json_data['CORNER_UR_LON_PRODUCT']
-                    }
+                    'geoLocationPolygons': [{
+                        'polygonPoints': [
+                            {
+                                "pointLatitude": json_data['CORNER_UL_LAT_PRODUCT'],
+                                "pointLongitude": json_data['CORNER_UL_LON_PRODUCT']
+                            },
+                            {
+                                "pointLatitude": json_data['CORNER_LL_LAT_PRODUCT'],
+                                "pointLongitude": json_data['CORNER_LL_LON_PRODUCT']
+                            },
+                            {
+                                "pointLatitude": json_data['CORNER_LR_LAT_PRODUCT'],
+                                "pointLongitude": json_data['CORNER_LR_LON_PRODUCT']
+                            },
+                            {
+                                "pointLatitude": json_data['CORNER_UR_LAT_PRODUCT'],
+                                "pointLongitude": json_data['CORNER_UR_LON_PRODUCT']
+                            },
+                            {
+                                "pointLatitude": json_data['CORNER_UL_LAT_PRODUCT'],
+                                "pointLongitude": json_data['CORNER_UL_LON_PRODUCT']
+                            }
+                        ]
+                    }]
                 }]
         elif key == 'LANDSAT_SCENE_ID':
             alt_dict = {

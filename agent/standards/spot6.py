@@ -36,13 +36,30 @@ def transform_to_datacite(settings, meta):
         {'subject': json_data['ARCHIVING_CENTER']})
 
     dc_data['geoLocations'] = [{
-        'geoLocation': {
-            'geoLocationBox': '{} {} {} {}'.format(
-                json_data['geoLocations'][0]['LATITUDE'],
-                json_data['geoLocations'][0]['LONGITUDE'],
-                json_data['geoLocations'][2]['LATITUDE'],
-                json_data['geoLocations'][2]['LONGITUDE'],
-            )}
+        'geoLocationPolygons': [{
+            'polygonPoints': [
+                {
+                    "pointLatitude": json_data['geoLocations'][0]['LATITUDE'],
+                    "pointLongitude": json_data['geoLocations'][0]['LONGITUDE']
+                },
+                {
+                    "pointLatitude": json_data['geoLocations'][1]['LATITUDE'],
+                    "pointLongitude": json_data['geoLocations'][1]['LONGITUDE']
+                },
+                {
+                    "pointLatitude": json_data['geoLocations'][2]['LATITUDE'],
+                    "pointLongitude": json_data['geoLocations'][2]['LONGITUDE']
+                },
+                {
+                    "pointLatitude": json_data['geoLocations'][3]['LATITUDE'],
+                    "pointLongitude": json_data['geoLocations'][3]['LONGITUDE']
+                },
+                {
+                    "pointLatitude": json_data['geoLocations'][0]['LATITUDE'],
+                    "pointLongitude": json_data['geoLocations'][0]['LONGITUDE']
+                }
+            ]
+        }]
     }]
 
     # Defaults should come from settings
