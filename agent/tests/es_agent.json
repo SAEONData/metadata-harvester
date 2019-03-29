@@ -1,0 +1,11 @@
+[
+    {
+        "source_dir": "/home/mike/projects/harvester/data/SANSA_metdata_files/CBERS_P10",
+        "standard": "CBERS_P10",
+        "upload_server_url": "http://localhost:9210",
+        "upload_method": "add",
+        "upload_index": "md_index_1",
+        "upload_org_name": "webtide",
+        "upload_collection": "unittest13"
+    }
+]
