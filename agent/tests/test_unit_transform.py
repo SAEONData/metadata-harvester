@@ -1,3 +1,8 @@
+"""
+To rnu these tests:
+python setup.py test
+
+"""
 import unittest
 from agent.transformer import transform
 
@@ -175,6 +180,22 @@ class TransformerTest(unittest.TestCase):
         self.assertEqual(output.get('valid'), True)
         self.assertIn(
             {'subject': 'Landsat 8'},
+            output['datacite_data']['subjects'])
+
+    def test_12_transform_cbers_p10(self):
+        with open('./agent/tests/cbers_p10/CBERS_P10_sample.xml') as afile:
+            input_data = afile.read()
+
+        settings = {
+            'title': 'TestRecord1',
+            'input_data': input_data,
+            'standard': 'CBERS_P10'
+        }
+        output = transform(kwargs=settings)
+        self.assertEqual(output.get('success'), True)
+        self.assertEqual(output.get('valid'), True)
+        self.assertIn(
+            {'subject': 'P10 Sensor Type'},
             output['datacite_data']['subjects'])
 
 

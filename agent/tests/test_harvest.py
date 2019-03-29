@@ -6,16 +6,19 @@ def harvest_folder(settings):
     output = {'success': False}
 
     data = {
-        'source_dir': settings.get('source_dir', '/agent/tests/cbers_mux'),
-        'standard': settings.get('standard', 'CBERS_MUX'),
+        'source_dir': settings.get('source_dir'),
+        'standard': settings.get('standard'),
         'upload_server_url': settings.get('upload_server_url'),
         'upload_user': settings.get('upload_user'),
         'upload_password': settings.get('upload_password'),
         'transport': 'FileSystem',
-        'upload_method': settings.get('upload_method', 'jsonCreateMetadataAsJson'),
+        'upload_method': settings.get('upload_method'),
         'upload_org_name': settings.get('upload_org_name'),
         'upload_collection': settings.get('upload_collection'),
     }
+    if settings.get('upload_index'):
+        data['upload_index'] = settings['upload_index']
+
     base = 'http://localhost:8080'
     url = "{}/harvest".format(base)
     try:
@@ -43,16 +46,24 @@ def harvest_folder(settings):
 if __name__ == "__main__":
 
     sources = [
+        # {
+        #     'source_dir': '/home/mike/projects/harvester/data/SANSA_metdata_files/CBERS_P10',
+        #     'standard': 'CBERS_P10',
+        #     'upload_server_url': 'http://localhost:9210',
+        #     'upload_method': 'add',
+        #     'upload_index': 'md_index_1',
+        #     'upload_org_name': 'webtide',
+        #     'upload_collection': 'unittest13',
+        # }, {
+        #     'source_dir': '/home/mike/projects/harvester/data/SANSA_metdata_files/CBERS_P5M',
+        #     'standard': 'CBERS_P5M',
+        #     'upload_server_url': 'http://localhost:9210',
+        #     'upload_method': 'add',
+        #     'upload_index': 'md_index_1',
+        #     'upload_org_name': 'webtide',
+        #     'upload_collection': 'unittest13',
+        # }
         {
-            'source_dir': './agent/tests/cbers_mux',
-            'standard': 'CBERS_MUX',
-            'upload_server_url': 'https://ckan.sansa.saeoss.org',
-            'upload_user': 'mikemets',
-            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
-            'upload_method': 'api/action/metadata_record_create',
-            'upload_org_name': 'webtide',
-            'upload_collection': 'unittest10',
-        }, {
             'source_dir': './agent/tests/cbers_p5m',
             'standard': 'CBERS_P5M',
             'upload_server_url': 'https://ckan.sansa.saeoss.org',
@@ -60,9 +71,26 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest10',
-        },
-        {
+            'upload_collection': 'unittest13',
+        }, {
+            'source_dir': './agent/tests/cbers_p10',
+            'standard': 'CBERS_P10',
+            'upload_server_url': 'https://ckan.sansa.saeoss.org',
+            'upload_user': 'mikemets',
+            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
+            'upload_method': 'api/action/metadata_record_create',
+            'upload_org_name': 'webtide',
+            'upload_collection': 'unittest13',
+        }, {
+            'source_dir': './agent/tests/cbers_mux',
+            'standard': 'CBERS_MUX',
+            'upload_server_url': 'https://ckan.sansa.saeoss.org',
+            'upload_user': 'mikemets',
+            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
+            'upload_method': 'api/action/metadata_record_create',
+            'upload_org_name': 'webtide',
+            'upload_collection': 'unittest13',
+        }, {
             'source_dir': './agent/tests/spot6',
             'standard': 'SPOT6',
             'upload_server_url': 'https://ckan.sansa.saeoss.org',
@@ -70,9 +98,8 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest10',
-        },
-        {
+            'upload_collection': 'unittest13',
+        }, {
             'source_dir': './agent/tests/landsat8',
             'standard': 'LANDSAT8',
             'upload_server_url': 'https://ckan.sansa.saeoss.org',
@@ -80,7 +107,7 @@ if __name__ == "__main__":
             'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
             'upload_method': 'api/action/metadata_record_create',
             'upload_org_name': 'webtide',
-            'upload_collection': 'unittest10',
+            'upload_collection': 'unittest13',
         }
     ]
     all_good = True
@@ -95,9 +122,11 @@ if __name__ == "__main__":
             all_good = False
             continue
 
-        print('Harvest success {} : {}'.format(
-            output['success'], source.get('source_dir')))
         results = output['results']
+        print('Harvest success {} : dir {}, num {}'.format(
+            output['success'],
+            source.get('source_dir'),
+            len(results['records'])))
         for record in results['records']:
             if not record['valid']:
                 print('{title}: Transform = {valid}, Error = {error}'.format(**record))

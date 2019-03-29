@@ -23,7 +23,7 @@ def _checkXmlStructure(data):
 def _clean_xml_data(data):
     # Strip all non ascii character
     data = data.replace('\xe2\x80\x99', "'")
-    data = data.encode('utf-8', 'strict')
+    # data = data.encode('utf-8', 'strict')
     return data
 
 
@@ -56,7 +56,7 @@ def transform_record(record, settings):
         }
         return meta
 
-    if standard in ('CBERS_MUX', 'CBERS_P5M', 'SPOT6'):
+    if standard in ('CBERS_MUX', 'CBERS_P5M', 'CBERS_P10', 'SPOT6'):
         input_data = _clean_xml_data(record['input_data'])
         meta['input_data'] = str(input_data)
 

@@ -33,14 +33,15 @@ if __name__ == "__main__":
             'source_file': './agent/tests/cbers_mux/CBERS_MUX_sample.xml',
             'standard': 'CBERS_MUX',
         }, {
-            'source_file': './agent/tests/cbers_p5m/CBERS_P5M_sample.xml',
-            'standard': 'CBERS_P5M',
-        },
-        {
+            'source_file': './agent/tests/cbers_p5m/cbers_p5m_sample.xml',
+            'standard': 'cbers_p5m',
+        }, {
+            'source_file': './agent/tests/cbers_p10/cbers_p10_sample.xml',
+            'standard': 'cbers_p10',
+        }, {
             'source_file': './agent/tests/spot6/SPOT6_sample.xml',
             'standard': 'SPOT6',
-        },
-        {
+        }, {
             'source_file': './agent/tests/landsat8/landsat8_sample.txt',
             'standard': 'LANDSAT8',
         }
