@@ -89,7 +89,7 @@ def transform_to_datacite(settings, meta):
             'rightsURI': 'https://creativecommons.org/licenses/by-sa/4.0'
         }
     ]
-    print(str(dc_data))
+    # print(str(dc_data))
     return dc_data
 
 
