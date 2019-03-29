@@ -17,4 +17,5 @@ setup(
         'declxml',
     ],
     python_requires='>=3',
+    tests="tests",
 )
