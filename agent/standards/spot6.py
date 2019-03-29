@@ -10,8 +10,13 @@ def transform_to_datacite(settings, meta):
     json_data = meta['json_data']
 
     # Contruct from record
+    spot_serial = '{} {}'.format(
+        json_data['PLATFORM_NAME'],
+        json_data['PLATFORM_SERIAL_NUMBER'])
+
     dc_data['name'] = json_data['name']
-    dc_data['titles'].append({'title': "Image archive product of SPOT 6 Satellite on {} for orbit {}".format(
+    dc_data['titles'].append({'title': "Image archive product of {} Satellite on {} for orbit {}".format(
+        spot_serial,
         json_data['production_date'][:10],
         json_data['ORBIT_NUMBER'])})
     dc_data['dates'].append({
@@ -21,7 +26,7 @@ def transform_to_datacite(settings, meta):
         'dateType': 'Collected'})
     dc_data['publicationYear'] = \
         json_data.get('production_date', '').split('-')[0]
-    dc_data['subjects'].append({'subject': 'SPOT 6'})
+    dc_data['subjects'].append({'subject': spot_serial})
     dc_data['subjects'].append({'subject': 'NOAMI'})
     dc_data['subjects'].append(
         {'subject': 'AstroSat Optical Modular Instrument'})
@@ -108,4 +113,7 @@ xml_processor = declxml.dictionary('AST_Archive_Metadata', [
     declxml.array(geo_processor, nested='Segment_Description/Data_Acquisition/Programming/Programming_Geo_Area', alias='geoLocations'),
     declxml.string('Segment_Description/Data_Acquisition/UTC_Acquisition_Range/START', alias='START'),
     declxml.string('Segment_Description/Data_Acquisition/UTC_Acquisition_Range/END', alias='END'),
+    declxml.string('Segment_Description/Data_Strip_Identification/PLATFORM_NAME', required=True, alias='PLATFORM_NAME'),
+    declxml.string('Segment_Description/Data_Strip_Identification/PLATFORM_SERIAL_NUMBER', required=True, alias='PLATFORM_SERIAL_NUMBER'),
+    declxml.string('Segment_Description/Data_Strip_Identification/DATA_STRIP_TYPE', required=False, alias='DATA_STRIP_TYPE'),
 ])
