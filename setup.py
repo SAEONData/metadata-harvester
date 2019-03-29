@@ -15,6 +15,7 @@ setup(
         'cherrypy',
         'mako',
         'declxml',
+        'pathlib',
     ],
     python_requires='>=3',
     tests="tests",

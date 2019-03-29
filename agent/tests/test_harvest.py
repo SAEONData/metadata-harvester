@@ -1,5 +1,7 @@
+import argparse
 import json
 import requests
+from pathlib import Path
 
 
 def harvest_folder(settings):
@@ -43,73 +45,17 @@ def harvest_folder(settings):
     return output
 
 
-if __name__ == "__main__":
+def _harvest_sources(filename):
+    sources_file = Path(filename)
+    if not sources_file.is_file():
+        return "Sources file {} doesn't exist".format(filename)
 
-    sources = [
-        # {
-        #     'source_dir': '/home/mike/projects/harvester/data/SANSA_metdata_files/CBERS_P10',
-        #     'standard': 'CBERS_P10',
-        #     'upload_server_url': 'http://localhost:9210',
-        #     'upload_method': 'add',
-        #     'upload_index': 'md_index_1',
-        #     'upload_org_name': 'webtide',
-        #     'upload_collection': 'unittest13',
-        # }, {
-        #     'source_dir': '/home/mike/projects/harvester/data/SANSA_metdata_files/CBERS_P5M',
-        #     'standard': 'CBERS_P5M',
-        #     'upload_server_url': 'http://localhost:9210',
-        #     'upload_method': 'add',
-        #     'upload_index': 'md_index_1',
-        #     'upload_org_name': 'webtide',
-        #     'upload_collection': 'unittest13',
-        # }
-        {
-            'source_dir': './agent/tests/spot6',
-            'standard': 'SPOT6',
-            'upload_server_url': 'https://ckan.sansa.saeoss.org',
-            'upload_user': 'mikemets',
-            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
-            'upload_method': 'api/action/metadata_record_create',
-            'upload_org_name': 'webtide',
-            'upload_collection': 'unittest13',
-        }, {
-            'source_dir': './agent/tests/cbers_p5m',
-            'standard': 'CBERS_P5M',
-            'upload_server_url': 'https://ckan.sansa.saeoss.org',
-            'upload_user': 'mikemets',
-            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
-            'upload_method': 'api/action/metadata_record_create',
-            'upload_org_name': 'webtide',
-            'upload_collection': 'unittest13',
-        }, {
-            'source_dir': './agent/tests/cbers_p10',
-            'standard': 'CBERS_P10',
-            'upload_server_url': 'https://ckan.sansa.saeoss.org',
-            'upload_user': 'mikemets',
-            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
-            'upload_method': 'api/action/metadata_record_create',
-            'upload_org_name': 'webtide',
-            'upload_collection': 'unittest13',
-        }, {
-            'source_dir': './agent/tests/cbers_mux',
-            'standard': 'CBERS_MUX',
-            'upload_server_url': 'https://ckan.sansa.saeoss.org',
-            'upload_user': 'mikemets',
-            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
-            'upload_method': 'api/action/metadata_record_create',
-            'upload_org_name': 'webtide',
-            'upload_collection': 'unittest13',
-        }, {
-            'source_dir': './agent/tests/landsat8',
-            'standard': 'LANDSAT8',
-            'upload_server_url': 'https://ckan.sansa.saeoss.org',
-            'upload_user': 'mikemets',
-            'upload_password': '64a84482-5af9-4854-ac51-5de996c91653',
-            'upload_method': 'api/action/metadata_record_create',
-            'upload_org_name': 'webtide',
-            'upload_collection': 'unittest13',
-        }
-    ]
+    with open(sources_file) as sources_data:
+        try:
+            sources = json.load(sources_data)
+        except Exception as e:
+            return str(e)
+
     all_good = True
     for source in sources:
         output = harvest_folder(source)
@@ -142,6 +88,21 @@ if __name__ == "__main__":
             #     continue
 
     if all_good:
-        print('Tests completed successfully ')
+        return 'Tests completed successfully'
     else:
-        print('Tests complete - see issues above')
+        return 'Tests complete - see issues above'
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Harvest provided sources.')
+    parser.add_argument(
+        '--sources',
+        help='Filename that contains the list of sources')
+
+    args = vars(parser.parse_args())
+    sources = args['sources']
+    if sources is None:
+        sources = 'tests/sources.json'
+
+    result = _harvest_sources(sources)
+    print(result)
