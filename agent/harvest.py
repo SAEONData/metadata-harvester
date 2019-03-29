@@ -4,6 +4,7 @@ import os
 import requests
 from agent import config
 from .transformer import transform_record
+from .standards import get_unique_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -15,44 +16,66 @@ def _upload_record(result, settings):
     upload_method = settings.get('upload_method')
 
     data = {
-        'owner_org': settings['upload_org_name'],
-        'metadata_collection_id': settings['upload_collection'],
         'metadata_json': json.dumps(result['datacite_data']),
+        'owner_org': settings.get('upload_org_name', ''),
         # 'infrastructures': [{'id': 'sansa'}],
+        'metadata_collection_id': settings.get('upload_collection', ''),
         'metadata_standard_id': 'datacite-4-2',
         'deserialize_json': 'true',
     }
-    headers = {
-        'Authorization': settings['upload_password'],
-    }
+    if settings.get('upload_index'):
+        data['index'] = settings['upload_index']
+        data['collection'] = settings.get('upload_collection', '')
+        data['organization'] = settings.get('upload_org_name', '')
+        data['record_id'] = get_unique_identifier()
+        if not result['datacite_data']['identifier']:
+            result['datacite_data']['identifier'] = {
+                "identifier": data['record_id'],
+                # "identifierType": "DOI"
+            }
+        result['datacite_data'].pop('additionalFields')
+        data['metadata_json'] = json.dumps(result['datacite_data'])
+
+    headers = None
+    if settings.get('upload_password'):
+        headers = {
+            'Authorization': settings['upload_password'],
+        }
     url = "{}/{}".format(settings['upload_server_url'], upload_method)
     try:
-        response = requests.post(
-            url=url,
-            data=data,
-            headers=headers
-        )
+        if headers:
+            response = requests.post(
+                url=url,
+                data=data,
+                headers=headers
+            )
+        else:
+            response = requests.post(
+                url=url,
+                data=data,
+            )
     except Exception as e:
-        print(response.text)
+        # print(response.text)
         result['upload_error'] = 'Request failed with exception {}.'.format(e)
-        print('Uploader: {upload_success}: {upload_error}'.format(**result))
+        logger.info('Uploader: {upload_success}: {upload_error}'.format(**result))
         return result
     if response.status_code != 200:
-        print(response.text)
+        # print(response.text)
         result['upload_error'] = 'Request failed with return code: %s' % (
             response.status_code)
-        print('Uploader: {upload_success}: {upload_error}'.format(**result))
+        logger.info('Uploader: {upload_success}: {upload_error}'.format(**result))
         return result
 
     upload_result = json.loads(response.text)
-    if upload_result.get('status') == 'failed':
+    if upload_result.get('status') == 'failed' or \
+       ('success' in upload_result.keys() and not upload_result.get('success')):
         result['upload_error'] = upload_result.get('msg', 'Unknown')
-        print('Uploader: {upload_success}: {upload_error}'.format(**result))
+        logger.info('Uploader: {upload_success}: {upload_error}'.format(**result))
         return result
 
     result['upload_success'] = True
     result['upload_result'] = upload_result
-    print('Uploader: {upload_success}'.format(**result))
+    logger.info('Uploaded: {upload_success}'.format(**result))
     return result
 
 
@@ -77,7 +100,7 @@ def _validate_record(result, settings):
             headers=headers
         )
     except Exception as e:
-        print(response.text)
+        # print(response.text)
         result['validation_errors'].append(
             'Request failed with exception {}.'.format(e))
         return result
@@ -91,11 +114,11 @@ def _validate_record(result, settings):
     if validation_result.get('status') == 'failed':
         result['validation_errors'].append(
             validation_result.get('msg', 'Unknown'))
-        print('Uploader: {validation_success}: {validation_errors}'.format(**result))
+        logger.info('Uploader: {validation_success}: {validation_errors}'.format(**result))
         return result
 
     result['validation_success'] = True
-    print('Uploader: {validation_success}'.format(**result))
+    logger.info('Validation: {validation_success}'.format(**result))
     return result
 
 
@@ -121,27 +144,27 @@ def _transition_record(result, settings):
             headers=headers
         )
     except Exception as e:
-        print(response.text)
+        # print(response.text)
         result['transition_errors'].append(
             'Request failed with exception {}.'.format(e))
         return result
 
     if response.status_code != 200:
-        print(response.text)
+        # print(response.text)
         result['transition_error'].append(
             'Request failed with return code: %s' % (response.status_code))
         return result
 
     transition_result = json.loads(response.text)
-    print(transition_result)
+    # print(transition_result)
     if transition_result.get('status') == 'failed':
         result['transition_errors'].append(
             transition_result.get('msg', 'Unknown'))
-        print('Uploader: {transition_success}: {transition_errors}'.format(**result))
+        logger.info('Transition: {transition_success}: {transition_errors}'.format(**result))
         return result
 
     result['transition_success'] = True
-    print('Uploader: {transition_success}'.format(**result))
+    logger.info('Transition: {transition_success}'.format(**result))
     return result
 
 
@@ -164,7 +187,7 @@ def _get_metadata_records(settings):
         records = []
         messages = []
         for filename in files:
-            print('Process file {}'.format(filename))
+            logger.info('Process file {}'.format(filename))
             fullpath = os.path.join(settings['source_dir'], filename)
             if not os.path.isfile(fullpath):
                 messages.append('Item {} is not a file'.format(filename))
@@ -209,12 +232,11 @@ def _harvest_records(settings):
             result = _upload_record(result, settings)
         else:
             logger.info('Harvester: Invalid transformation')
-            continue
 
         # if result['upload_success']:
         #     result = _validate_record(result, settings)
         # else:
-        #     logger.info('Harvester: Upload failed')
+        #     print('Harvester: Upload failed')
         #     continue
         # if result['validated']:
         #     result = _submit_record(result, settings)
@@ -285,6 +307,11 @@ def harvest(kwargs):
         settings['upload_collection'] = config.upload_collection
     if kwargs.get('upload_collection'):
         settings['upload_collection'] = kwargs.get('upload_collection')
+
+    if hasattr(config, 'upload_index'):
+        settings['upload_index'] = config.upload_index
+    if kwargs.get('upload_index'):
+        settings['upload_index'] = kwargs.get('upload_index')
 
     results = _harvest_records(settings)
 
