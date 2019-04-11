@@ -315,20 +315,41 @@ def transform_record(record, creds):
         'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
     }
 
-    geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
-    northBoundLat = geoBoxParts[2]
-    southBoundLat = geoBoxParts[0]
-    westBoundLon = geoBoxParts[1]
-    eastBoundLon = geoBoxParts[3]
- 
-    record['jsonData']['geoLocations'] = [{
-        'geoLocationBox': {
-            'northBoundLatitude': northBoundLat,
-            'southBoundLatitude': southBoundLat,
-            'westBoundLongitude': westBoundLon,
-            'eastBoundLongitude': eastBoundLon
-        }
-    }]
+    # if no geolocations, blank it out
+    if (len( record['jsonData']['geoLocations']) == 0):
+        record['jsonData']['geoLocations'] = [{
+            'geoLocationBox':'0 0 0 0'
+        }]
+    #print(record['jsonData']['geoLocations'][0].keys())
+    if (len(record['jsonData']['geoLocations'][0].keys()) > 1):
+        print(record['jsonData']['geoLocations'][0])
+
+    #TODO: BUG FIX, geolocationpoint & box override each other, must add if both exist
+    if ('geoLocationPoint' in record['jsonData']['geoLocations'][0].keys()):
+        geoPoint = record['jsonData']['geoLocations'][0]
+        record['jsonData']['geoLocations'] = [{
+                "geoLocationPlace": geoPoint['geoLocationPlace'],   
+                "geoLocationPoint": {
+                    "pointLongitude":geoPoint['geoLocationPoint'].split()[1],
+                    "pointLatitude": geoPoint['geoLocationPoint'].split()[0]
+                }
+        }]        
+
+    if ('geoLocationBox' in record['jsonData']['geoLocations'][0].keys()):
+        geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
+        northBoundLat = geoBoxParts[2]
+        southBoundLat = geoBoxParts[0]
+        westBoundLon = geoBoxParts[1]
+        eastBoundLon = geoBoxParts[3]
+    
+        record['jsonData']['geoLocations'] = [{
+            'geoLocationBox': {
+                'northBoundLatitude': northBoundLat,
+                'southBoundLatitude': southBoundLat,
+                'westBoundLongitude': westBoundLon,
+                'eastBoundLongitude': eastBoundLon
+            }
+        }]
 
     del_ind = []
     for i in range(len(record['jsonData']['dates'])):
@@ -347,10 +368,21 @@ def transform_record(record, creds):
         "alternateIdentifier":record['uid'],
         "alternateIdentifierType": "Plone"}]
 
+    # if no description, blank it out
+    if (len(record['jsonData']['description']) == 0):
+        record['jsonData']['description'] = [{
+            'description':'none'}]
+
     record['jsonData']['descriptions'] = []
     record['jsonData']['descriptions'].append({
         'descriptionType': 'Abstract',#record['jsonData']['description'][0]['descriptionType'],
         'description': record['jsonData']['description'][0]['description']})
+
+    # if no rights then blank it out
+    if (len(record['jsonData']['rights']) == 0):
+        record['jsonData']['rights'] = [{
+            'rights': 'none',
+            'rightsURI': 'none'}]
 
     record['jsonData']['rightsList'] = [
         {
@@ -366,6 +398,7 @@ def transform_record(record, creds):
             immutable_resource = resource
         else:
             linked_resources.append(resource)
+    # if no immutable resource then blank it out
     if not immutable_resource:
         immutable_resource = {
             'href':'none available',
@@ -379,9 +412,18 @@ def transform_record(record, creds):
     record['jsonData']['linkedResources'] = []
     linked_res_mappings = {
         'information':'Information',
-        'service':'Query'
+        'service':'Query',
+        'download':'Query',
+        'Data Link':'Query',
+        'Related Link':'Query',
+        'metadata':'Metadata',
+        'Link':'Information',
+        'order':'ConditionalAccess',
+        'originalmetadata':'Metadata'
     }
     for linked_res in linked_resources:
+        #if linked_res['func'] == 'order':
+        #    print(record['jsonData']['additionalFields']['onlineResources'])
         record['jsonData']['linkedResources'].append({
             "linkedResourceType": linked_res_mappings[linked_res['func']],
             "resourceURL": linked_res['href'],
