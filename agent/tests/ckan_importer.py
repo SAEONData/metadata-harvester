@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 import requests
 import time
+import re
 
 import_to_ckan = True
 import_to_agent = False
@@ -12,8 +13,8 @@ import_to_agent = False
 # Constants
 # Source config
 # src_base_url = 'http://qa.dirisa.org'
-# src_base_url = 'http://oa.dirisa.org'
-src_base_url = 'http://oa.dirisa.org/Institutions/carbon-atlas/carbon-atlas'
+src_base_url = 'http://oa.dirisa.org'
+# src_base_url = 'http://oa.dirisa.org/Institutions/carbon-atlas/carbon-atlas'
 # src_base_url = 'http://localhost:8080/SAEON'
 
 # ES destination config
@@ -36,16 +37,15 @@ def get_physical_path(url):
         idx = 4
     return '/'.join(url.split('/')[idx:])
 
-
-def add_a_record_to_ckan(collection, metadata_json, organization, record_id, infrastructures, state):
-
+def set_workflow_state(state, record_id, organization):
     data = {
-        'jsonData': json.dumps(metadata_json),
-        'metadataType': 'datacite-4-1',
-        'workflowState': state,
+        'recordId': record_id,
+        'workflowState': state
     }
+    org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
     url = "{}/Institutions/{}/{}-repository/metadata/jsonCreateMetadataAsJson".format(
-        ckan_base_url, organization['id'], organization['id'])
+        ckan_base_url, org_id_reformatted, org_id_reformatted)
+    
     response = requests.post(
         url=url,
         params=data,
@@ -56,13 +56,49 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
     result = json.loads(response.text)
+
+    if result['status'] == 'success':
+        print('Workflow status updated to {}'.format(result['state']))
+    else:
+        print('Workflow status could not be updated!\n Error {}'.format(result['msg'])) 
+
+def add_a_record_to_ckan(collection, metadata_json, organization, record_id, infrastructures, state):
+
+    data = {
+        'jsonData': json.dumps(metadata_json),
+        'metadataType': 'datacite-4-2',
+        'targetWorkflowState': 'plone-published',
+        'fallbackWorkflowState': 'plone-provisional' 
+    }
+
+    org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
+    url = "{}/Institutions/{}/{}-repository/metadata/jsonCreateMetadataAsJson".format(
+        ckan_base_url, org_id_reformatted, org_id_reformatted)
+    response = requests.post(
+        url=url,
+        params=data,
+        auth=requests.auth.HTTPBasicAuth(
+            creds['ckan_user'], creds['ckan_pwd'])
+    )
+    if response.status_code != 200:
+        raise RuntimeError('Request failed with return code: %s' % (
+            response.status_code))
+    result = json.loads(response.text)
+    #print("#### RESULT ####")
+    #print(result)
     if result['status'] == 'success':
         if check_ckan_added(organization, result):
             print('Added Successfully')
         else:
             print('Record not found')
-        if result['workflow_status'] == 'failed':
-            print('But workflow failed: {}'.format(result['workflow_msg']))
+        #if result['workflow_status'] == 'failed':
+        #    print('But workflow failed: {}'.format(result['workflow_msg']))
+        if result['validate_status'] == 'success':
+            print("Validated successfully, advancing state")
+            set_workflow_state('plone-published', record_id, organization)
+        elif result['validate_status'] == 'failed':
+            print("Validation failed, regressing state")
+            set_workflow_state('plone-prvisional', record_id, organization)
     else:
         print(result)
     return result
@@ -108,8 +144,9 @@ def check_ckan_added(organization, result):
     data = {
         'types': 'Metadata',
     }
+    org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
     url = "{}/Institutions/{}/{}-repository/metadata/jsonContent".format(
-        ckan_base_url, organization['id'], organization['id'])
+        ckan_base_url, org_id_reformatted, org_id_reformatted)
     try:
         response = requests.get(
             url=url,
@@ -126,10 +163,8 @@ def check_ckan_added(organization, result):
         #     response.status_code))
         return False
 
-    # print(response.text)
     found = False
     result = json.loads(response.text)
-    print(len(result))
     for record in result:
         if record['id'] == record_id:
             found = True
@@ -167,7 +202,6 @@ def check_agent_added(organization, record_id):
 
 def download_xml(url, creds):
     url = "{}/getOriginalXml".format(url)
-    print(url)
     response = requests.get(
         url=url,
         auth=requests.auth.HTTPBasicAuth(
@@ -183,7 +217,6 @@ def download_xml(url, creds):
 def get_metadata_records(path, creds):
 
     url = "{}/{}/jsonGetRecords".format(src_base_url, path)
-    # print(url)
     response = requests.get(
         url=url,
         auth=requests.auth.HTTPBasicAuth(
@@ -199,7 +232,6 @@ def get_metadata_records(path, creds):
 def get_institutions(creds):
 
     url = "{}/Institutions/jsonContent?types=Institution".format(src_base_url)
-    # print(url)
     try:
         response = requests.get(
             url=url,
@@ -230,7 +262,6 @@ def get_metadata_collections(inst, creds, log_data):
 
     url = "{}/{}/jsonContent?types=MetadataCollection&depth=-1".format(
         src_base_url, inst['path'])
-    # print(url)
     response = requests.get(
         url=url,
         auth=requests.auth.HTTPBasicAuth(
@@ -258,9 +289,10 @@ def get_metadata_collections(inst, creds, log_data):
 
 
 def create_institution(inst):
+    title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', inst['title'].lower())
     url = "{}/Institutions/jsonCreateInstitution?title={}".format(
-        ckan_base_url, inst['title'])
-    # print(url)
+        ckan_base_url, title_reformatted)
+    
     response = requests.post(
         url=url,
         auth=requests.auth.HTTPBasicAuth(
@@ -276,8 +308,91 @@ def create_institution(inst):
 
 
 def transform_record(record, creds):
-    record['original_xml'] = download_xml(record['url'], creds)
-    return record
+    resourceType = record['jsonData']['resourceType']
+    resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
+    record['jsonData']['resourceType'] = {
+        'resourceType': resourceType,
+        'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
+    }
+
+    geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
+    northBoundLat = geoBoxParts[2]
+    southBoundLat = geoBoxParts[0]
+    westBoundLon = geoBoxParts[1]
+    eastBoundLon = geoBoxParts[3]
+ 
+    record['jsonData']['geoLocations'] = [{
+        'geoLocationBox': {
+            'northBoundLatitude': northBoundLat,
+            'southBoundLatitude': southBoundLat,
+            'westBoundLongitude': westBoundLon,
+            'eastBoundLongitude': eastBoundLon
+        }
+    }]
+
+    del_ind = []
+    for i in range(len(record['jsonData']['dates'])):
+        if len(record['jsonData']['dates'][i]['date']) == 0:
+            del_ind.append(i)
+    for i in range(len(del_ind)):
+        record['jsonData']['dates'].pop(del_ind[i] - i*1)
+    
+    coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
+    coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
+    record['jsonData']['dates'].append({
+        "date" : "{}/{}".format(coverageBegin,coverageEnd),
+        "dateType": "Collected"}) 
+
+    record['jsonData']['alternateIdentifiers'] = [{
+        "alternateIdentifier":record['uid'],
+        "alternateIdentifierType": "Plone"}]
+
+    record['jsonData']['descriptions'] = []
+    record['jsonData']['descriptions'].append({
+        'descriptionType': 'Abstract',#record['jsonData']['description'][0]['descriptionType'],
+        'description': record['jsonData']['description'][0]['description']})
+
+    record['jsonData']['rightsList'] = [
+        {
+            'rights': record['jsonData']['rights'][0]['rights'],
+            'rightsURI': record['jsonData']['rights'][0]['rightsURI']
+        }
+    ]
+
+    immutable_resource = None
+    linked_resources = []
+    for resource in record['jsonData']['additionalFields']['onlineResources']:
+        if (not immutable_resource) and (resource['func'] == 'download'):
+            immutable_resource = resource
+        else:
+            linked_resources.append(resource)
+    if not immutable_resource:
+        immutable_resource = {
+            'href':'none available',
+            'desc':'none available'
+        }
+    #print(immutable_resource)
+    record['jsonData']['immutableResource'] = {
+        "resourceURL": immutable_resource['href'],
+        "resourceDescription": immutable_resource['desc']
+    }
+    record['jsonData']['linkedResources'] = []
+    linked_res_mappings = {
+        'information':'Information',
+        'service':'Query'
+    }
+    for linked_res in linked_resources:
+        record['jsonData']['linkedResources'].append({
+            "linkedResourceType": linked_res_mappings[linked_res['func']],
+            "resourceURL": linked_res['href'],
+            "resourceDescription": linked_res['desc']     
+        })
+
+    record['jsonData']['language'] = 'en-US'
+    record['jsonData']['original_xml'] = download_xml(record['url'], creds)
+    #print('### original xml ###')
+    #print(record['jsonData']['dates'])
+    return record['jsonData']
 
 
 def log_info(log_data, atype, msg):
@@ -304,12 +419,24 @@ def import_metadata_records(inst, creds, paths, log_data):
             continue
         if import_to_ckan:
             response = create_institution(inst)
+
+            if response['status'] == 'failed' and \
+                'message' in response['msg'] and \
+                response['msg']['message'].startswith(
+                    'Access denied'):
+                msg = '\n### Access denied! Could not add institution %s\n' %(inst)
+                print(msg)
+                
+                log_info(log_data,'institution', msg)  
+                log_info(log_data, 'institution', response['msg'])
+                continue
+
             if response['status'] == 'failed' and \
                not response['msg']['name'][0].startswith(
                     'Group name already exists'):
                 log_info(log_data, 'institution', response['msg'])
                 continue
-        for record in records['content']:
+        for record in records['content']:            
             record_id = None
             if isinstance(record['jsonData']['identifier'], dict):
                 record_id = record['jsonData']['identifier'].get('identifier')
@@ -342,16 +469,18 @@ def import_metadata_records(inst, creds, paths, log_data):
                     metadata_json=new_json_data,
                     collection='TestImport2',
                 )
+            #print('plone-{}'.format(record.get('status')))
             if import_to_ckan:
                 add_a_record_to_ckan(
-                    record_id=record_id,
+                    record_id=record['uid'],#record_id,
                     organization=inst,
                     infrastructures=[],
-                    metadata_json=record['jsonData'],
+                    metadata_json=new_json_data,#record['jsonData'],
                     collection='',
                     state='plone-{}'.format(record.get('status'))
+                    # original_xml??? or is it shipped in metadata_json
                 )
-
+            #print(breakpnt)
 
 if __name__ == "__main__":
 
