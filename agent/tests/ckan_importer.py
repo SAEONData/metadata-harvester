@@ -37,15 +37,17 @@ def get_physical_path(url):
         idx = 4
     return '/'.join(url.split('/')[idx:])
 
-def set_workflow_state(state, record_id, organization):
+def set_workflow_state(state, record_id, organization, val_result):
+    #print("Setting state for uid{}".format(record_id))
     data = {
         'recordId': record_id,
         'workflowState': state
     }
     org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
-    url = "{}/Institutions/{}/{}-repository/metadata/jsonCreateMetadataAsJson".format(
+    url = "{}/setWorkflowState".format(
         ckan_base_url, org_id_reformatted, org_id_reformatted)
-    
+    #print(data)
+    #print(url)
     response = requests.post(
         url=url,
         params=data,
@@ -56,11 +58,20 @@ def set_workflow_state(state, record_id, organization):
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
     result = json.loads(response.text)
+    #print("## workflow status update result ###")
+    #print(result)
 
     if result['status'] == 'success':
         print('Workflow status updated to {}'.format(result['state']))
     else:
-        print('Workflow status could not be updated!\n Error {}'.format(result['msg'])) 
+        show_error = True
+        if ('message' in result['msg']) and \
+            (result['msg']['message'].__contains__(
+                'The metadata record is already assigned the specified workflow state')):
+                show_error = False
+        if show_error:
+            print('Workflow status could not be updated!\n Error {}'.format(result['msg']))
+            print(val_result)
 
 def add_a_record_to_ckan(collection, metadata_json, organization, record_id, infrastructures, state):
 
@@ -74,6 +85,7 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
     url = "{}/Institutions/{}/{}-repository/metadata/jsonCreateMetadataAsJson".format(
         ckan_base_url, org_id_reformatted, org_id_reformatted)
+    #print(url)
     response = requests.post(
         url=url,
         params=data,
@@ -93,12 +105,14 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
             print('Record not found')
         #if result['workflow_status'] == 'failed':
         #    print('But workflow failed: {}'.format(result['workflow_msg']))
+        record_id = result['uid']
         if result['validate_status'] == 'success':
             print("Validated successfully, advancing state")
-            set_workflow_state('plone-published', record_id, organization)
+            set_workflow_state('plone-published', record_id, organization, result)
         elif result['validate_status'] == 'failed':
             print("Validation failed, regressing state")
-            set_workflow_state('plone-prvisional', record_id, organization)
+            print(result)
+            set_workflow_state('plone-provisional', record_id, organization, result)
     else:
         print(result)
     return result
@@ -432,8 +446,9 @@ def transform_record(record, creds):
 
     record['jsonData']['language'] = 'en-US'
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
-    #print('### original xml ###')
-    #print(record['jsonData']['dates'])
+    #if (len(record['jsonData']['original_xml']) > 0):
+    #    print('### original xml ###')
+    #    print(record['jsonData']['original_xml'])
     return record['jsonData']
 
 
@@ -514,7 +529,7 @@ def import_metadata_records(inst, creds, paths, log_data):
             #print('plone-{}'.format(record.get('status')))
             if import_to_ckan:
                 add_a_record_to_ckan(
-                    record_id=record['uid'],#record_id,
+                    record_id=record_id,
                     organization=inst,
                     infrastructures=[],
                     metadata_json=new_json_data,#record['jsonData'],
