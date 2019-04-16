@@ -68,6 +68,7 @@ def set_workflow_state(state, record_id, organization, val_result):
         if ('message' in result['msg']) and \
             (result['msg']['message'].__contains__(
                 'The metadata record is already assigned the specified workflow state')):
+                print("Already assigned state {}".format(state))
                 show_error = False
         if show_error:
             print('Workflow status could not be updated!\n Error {}'.format(result['msg']))
@@ -112,6 +113,7 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
         elif result['validate_status'] == 'failed':
             print("Validation failed, regressing state")
             print(result)
+            #print(metadata_json)
             set_workflow_state('plone-provisional', record_id, organization, result)
     else:
         print(result)
@@ -374,9 +376,16 @@ def transform_record(record, creds):
     
     coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
     coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
+
+    # If no coverage end date, only use coverage begin for dates
+    if (len(coverageEnd) == 0):
+        dates = coverageBegin
+    else:
+        dates = "{}/{}".format(coverageBegin,coverageEnd)
     record['jsonData']['dates'].append({
-        "date" : "{}/{}".format(coverageBegin,coverageEnd),
-        "dateType": "Collected"}) 
+        "date" : dates,
+        "dateType": "Collected"})
+
 
     record['jsonData']['alternateIdentifiers'] = [{
         "alternateIdentifier":record['uid'],
@@ -414,10 +423,12 @@ def transform_record(record, creds):
             linked_resources.append(resource)
     # if no immutable resource then blank it out
     if not immutable_resource:
-        immutable_resource = {
-            'href':'none available',
-            'desc':'none available'
-        }
+        print("Immutable resource url not available!")
+        return None
+        #immutable_resource = {
+        #    'href':'none available',
+        #    'desc':'none available'
+        #}
     #print(immutable_resource)
     record['jsonData']['immutableResource'] = {
         "resourceURL": immutable_resource['href'],
@@ -445,6 +456,26 @@ def transform_record(record, creds):
         })
 
     record['jsonData']['language'] = 'en-US'
+
+    # Remove duplicate subjects
+    subjects = []
+    duplicate_subjects = []
+    new_subjects = []
+    for subject in record['jsonData']['subjects']:
+        curr_sub = subject['subject']
+        skip = False
+        for new_sub in new_subjects:
+            if curr_sub == new_sub['subject']:
+                #print("Duplicate! {}".format(curr_sub))
+                skip = True
+                break
+        if not skip:
+            new_subjects.append(subject)    
+    record['jsonData']['subjects'] = new_subjects
+    #print(new_subjects)
+
+
+    
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
     #if (len(record['jsonData']['original_xml']) > 0):
     #    print('### original xml ###')
@@ -497,12 +528,10 @@ def import_metadata_records(inst, creds, paths, log_data):
             record_id = None
             if isinstance(record['jsonData']['identifier'], dict):
                 record_id = record['jsonData']['identifier'].get('identifier')
-            if not record_id:
-                record_id = gen_unique_id()
-                record['jsonData']['identifier'] = {
-                    'identifier': record_id,
-                    'identifierType': 'internal'
-                }
+            if not record_id:                
+                #record_id = gen_unique_id()
+                print("No DOI identifier, skipping record!")
+                continue
 
             # Ignore problematic records
             if record.get('status') not in ['private', 'provisional']:
@@ -513,6 +542,10 @@ def import_metadata_records(inst, creds, paths, log_data):
                 continue
 
             new_json_data = transform_record(record, creds)
+
+            if not new_json_data:
+                print("Transform error! Skipping record.")
+                continue
 
             log_info(log_data, 'add_record', {
                 'action': 'add',
