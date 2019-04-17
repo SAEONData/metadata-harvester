@@ -331,25 +331,19 @@ def transform_record(record, creds):
         'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
     }
 
-    # if no geolocations, blank it out
-    if (len( record['jsonData']['geoLocations']) == 0):
-        record['jsonData']['geoLocations'] = [{
-            'geoLocationBox':'0 0 0 0'
-        }]
     #print(record['jsonData']['geoLocations'][0].keys())
     if (len(record['jsonData']['geoLocations'][0].keys()) > 1):
         print(record['jsonData']['geoLocations'][0])
 
-    #TODO: BUG FIX, geolocationpoint & box override each other, must add if both exist
+    locations = []
     if ('geoLocationPoint' in record['jsonData']['geoLocations'][0].keys()):
         geoPoint = record['jsonData']['geoLocations'][0]
-        record['jsonData']['geoLocations'] = [{
+        location = {
                 "geoLocationPlace": geoPoint['geoLocationPlace'],   
                 "geoLocationPoint": {
                     "pointLongitude":geoPoint['geoLocationPoint'].split()[1],
-                    "pointLatitude": geoPoint['geoLocationPoint'].split()[0]
-                }
-        }]        
+                    "pointLatitude": geoPoint['geoLocationPoint'].split()[0]}}
+        locations.append(location)        
 
     if ('geoLocationBox' in record['jsonData']['geoLocations'][0].keys()):
         geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
@@ -358,14 +352,21 @@ def transform_record(record, creds):
         westBoundLon = geoBoxParts[1]
         eastBoundLon = geoBoxParts[3]
     
-        record['jsonData']['geoLocations'] = [{
+        location = {
             'geoLocationBox': {
                 'northBoundLatitude': northBoundLat,
                 'southBoundLatitude': southBoundLat,
                 'westBoundLongitude': westBoundLon,
-                'eastBoundLongitude': eastBoundLon
-            }
-        }]
+                'eastBoundLongitude': eastBoundLon}}
+        locations.append(location)
+    
+    if len(locations) > 0:
+        record['jsonData']['geoLocations'] = locations
+    else:
+        # if no geolocations, blank it out
+        record['jsonData']['geoLocations'] = [{
+            'geoLocationBox':'0 0 0 0'}]
+    #print(record['jsonData']['geoLocations'])
 
     del_ind = []
     for i in range(len(record['jsonData']['dates'])):
