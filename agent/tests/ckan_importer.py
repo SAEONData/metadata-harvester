@@ -3,6 +3,7 @@
 import argparse
 from datetime import datetime
 import json
+import logging
 import requests
 import time
 import re
@@ -62,17 +63,21 @@ def set_workflow_state(state, record_id, organization, val_result):
     #print(result)
 
     if result['status'] == 'success':
-        print('Workflow status updated to {}'.format(result['state']))
+        msg = 'Workflow status updated to {}'.format(result['state'])
+        logging.info(msg)
     else:
         show_error = True
         if ('message' in result['msg']) and \
             (result['msg']['message'].__contains__(
                 'The metadata record is already assigned the specified workflow state')):
-                print("Already assigned state {}".format(state))
+                msg = "Already assigned state {}".format(state)
+                logging.info(msg)
                 show_error = False
         if show_error:
-            print('Workflow status could not be updated!\n Error {}'.format(result['msg']))
-            print(val_result)
+            msg = 'Workflow status could not be updated!\n Error {}'.format(result['msg'])
+            logging.error(msg)
+            logging.error(val_result)
+            #print(val_result)
 
 def add_a_record_to_ckan(collection, metadata_json, organization, record_id, infrastructures, state):
 
@@ -101,22 +106,29 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     #print(result)
     if result['status'] == 'success':
         if check_ckan_added(organization, result):
-            print('Added Successfully')
+            msg = 'Added Successfully'
+            logging.info(msg)
         else:
-            print('Record not found')
+            msg = 'Record not found'
+            logging.info(msg)
         #if result['workflow_status'] == 'failed':
         #    print('But workflow failed: {}'.format(result['workflow_msg']))
         record_id = result['uid']
         if result['validate_status'] == 'success':
-            print("Validated successfully, advancing state")
+            msg = "Validated successfully, advancing state"
+            logging.info(msg)
             set_workflow_state('plone-published', record_id, organization, result)
         elif result['validate_status'] == 'failed':
-            print("Validation failed, regressing state")
-            print(result)
+            msg = "Validation failed, regressing state"
+            logging.error(msg)
+            logging.error(result)
             #print(metadata_json)
             set_workflow_state('plone-provisional', record_id, organization, result)
     else:
-        print(result)
+        msg = 'Request to add record failed'
+        logging.error(msg)
+        logging.error(result)
+        #print(result)
     return result
 
 
@@ -424,7 +436,8 @@ def transform_record(record, creds):
             linked_resources.append(resource)
     # if no immutable resource then blank it out
     if not immutable_resource:
-        print("Immutable resource url not available!")
+        msg = "Immutable resource url not available!"
+        logging.error(msg)
         return None
         #immutable_resource = {
         #    'href':'none available',
@@ -496,15 +509,18 @@ def import_metadata_records(inst, creds, paths, log_data):
         if records.startswith('Request failed'):
             msg = '\n### {}: {}\n'.format(path, records)
             log_info(log_data, 'import', msg)
+            logging.error(msg)
             continue
         if records.startswith('There is nothing here'):
             msg = '\n### Unauthorised to access {}\n'.format(path)
             log_info(log_data, 'import', msg)
+            logging.error(msg)
             continue
         records = json.loads(records)
         if len(records['content']) == 0:
             msg = '\n### No records found in {}\n'.format(path)
             log_info(log_data, 'import', msg)
+            logging.error(msg)
             continue
         if import_to_ckan:
             response = create_institution(inst)
@@ -514,7 +530,9 @@ def import_metadata_records(inst, creds, paths, log_data):
                 response['msg']['message'].startswith(
                     'Access denied'):
                 msg = '\n### Access denied! Could not add institution %s\n' %(inst)
-                print(msg)
+                logging.error(msg)
+                logging.error(response['msg'])
+                #print(msg)
                 
                 log_info(log_data,'institution', msg)  
                 log_info(log_data, 'institution', response['msg'])
@@ -524,6 +542,7 @@ def import_metadata_records(inst, creds, paths, log_data):
                not response['msg']['name'][0].startswith(
                     'Group name already exists'):
                 log_info(log_data, 'institution', response['msg'])
+                logging.error(response['msg'])
                 continue
         for record in records['content']:            
             record_id = None
@@ -531,7 +550,9 @@ def import_metadata_records(inst, creds, paths, log_data):
                 record_id = record['jsonData']['identifier'].get('identifier')
             if not record_id:                
                 #record_id = gen_unique_id()
-                print("No DOI identifier, skipping record!")
+                msg = "No DOI identifier, skipping record!"
+                log_info(log_data,'record_id', msg)
+                logging.error(msg)
                 continue
 
             # Ignore problematic records
@@ -540,12 +561,15 @@ def import_metadata_records(inst, creds, paths, log_data):
                     'action': 'ignored',
                     'record_id': record_id,
                     'state': record.get('status')})
+                msg = 'Invalid record status: {}'.format(record.get('status'))
+                logging.error(msg)
                 continue
 
             new_json_data = transform_record(record, creds)
 
             if not new_json_data:
-                print("Transform error! Skipping record.")
+                msg = "Transform error! Skipping record."
+                logging.error(msg)
                 continue
 
             log_info(log_data, 'add_record', {
@@ -587,6 +611,7 @@ if __name__ == "__main__":
     parser.add_argument("--agent-base-url", required=False, help="the URL of the SAEON Metadata Agent")
     parser.add_argument("--agent-user", required=False, help="user name for agent")
     parser.add_argument("--agent-pwd", required=True, help="admin password for agent")
+    parser.add_argument("--log-file",required=False, help="file to log output to, otherwise output logged to console.")
 
     args = parser.parse_args()
     creds = {
@@ -605,6 +630,10 @@ if __name__ == "__main__":
     if args.import_to_agent:
         import_to_agent = str(args.import_to_agent).lower() == 'true'
     # print(import_to_agent)
+
+    if args.log_file:
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.basicConfig(filename=args.log_file,level=logging.DEBUG)
 
     institutions = get_institutions(creds)
     log_data = {}
