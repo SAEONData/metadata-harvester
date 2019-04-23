@@ -490,8 +490,41 @@ def transform_record(record, creds):
     record['jsonData']['subjects'] = new_subjects
     #print(new_subjects)
 
+    valid_contrib_types = [
+        'ContactPerson', 'DataCollector', 'DataCurator', 'DataManager', 
+        'Distributor', 'Editor', 'HostingInstitution', 'Producer',
+        'ProjectLeader', 'ProjectManager', 'ProjectMember',
+        'RegistrationAgency','RegistrationAuthority', 'RelatedPerson',
+        'Researcher', 'ResearchGroup', 'RightsHolder', 'Sponsor',
+        'Supervisor', 'WorkPackageLeader', 'Other']
 
+    funding_refs = []
+    contrib_i_to_remove = []
+    i = 0
+    contributors = record['jsonData']['contributors']
+    for contrib in contributors:
+        contrib_type = contrib['contributorType']        
+        if contrib_type == 'Funder':
+            funding_refs.append(contrib['contributorName'])
+            contrib_i_to_remove.append(i)
+        elif contrib_type.replace(" ","") in valid_contrib_types:
+            contrib['contributorType'] = contrib_type.replace(" ","")
+        elif contrib_type not in valid_contrib_types:
+            logging.info("Unsupportd contibutor type {}".format(contrib_type))
+            contrib['contributorType'] = 'Other'
+        i+=1
+    # Remove Funder contributor and add as fundingReference field
+    for i in range(len(contrib_i_to_remove)):
+        record['jsonData']['contributors'].pop(contrib_i_to_remove[i] - i)
+    funding_refs_formatted = []
+    for funding_ref in funding_refs:
+        funding_refs_formatted.append({"funderName":funding_ref})
+    record['jsonData']['fundingReferences'] = funding_refs_formatted 
     
+    #if len(contrib_i_to_remove) > 0:
+    #    print("Removed mandigno")
+    #    print(record['jsonData']['contributors'])
+
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
     if (len(record['jsonData']['original_xml']) > 0):
         print('### original xml ###')
@@ -526,7 +559,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
             logging.error(msg)
             continue       
 
-        if False:#import_to_ckan:
+        if import_to_ckan:
             response = create_institution(inst)
 
             if response['status'] == 'failed' and \
@@ -562,7 +595,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                         #logging.info("Skipping record {}, not in provided uid list".format(record['uid']))
                         continue
                     else:
-                        logging.info("Importing record {}, provided uid list".format(record['uid']))
+                        logging.info("Importing record {}, provided uid list".format(record['jsonData']['identifier']))
                 else:
                     #logging.error("Skipping invalid record")
                     continue
@@ -608,7 +641,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     collection='TestImport2',
                 )
             #print('plone-{}'.format(record.get('status')))
-            if False:#import_to_ckan:
+            if import_to_ckan:
                 add_a_record_to_ckan(
                     record_id=record_id,
                     organization=inst,
