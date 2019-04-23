@@ -7,6 +7,7 @@ import logging
 import requests
 import time
 import re
+import sys
 
 import_to_ckan = True
 import_to_agent = False
@@ -230,6 +231,7 @@ def check_agent_added(organization, record_id):
 
 def download_xml(url, creds):
     url = "{}/getOriginalXml".format(url)
+    #print(url)
     response = requests.get(
         url=url,
         auth=requests.auth.HTTPBasicAuth(
@@ -491,9 +493,10 @@ def transform_record(record, creds):
 
     
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
-    #if (len(record['jsonData']['original_xml']) > 0):
-    #    print('### original xml ###')
-    #    print(record['jsonData']['original_xml'])
+    if (len(record['jsonData']['original_xml']) > 0):
+        print('### original xml ###')
+        print(record['jsonData'])
+        #print(record['jsonData']['original_xml'])
     return record['jsonData']
 
 
@@ -503,7 +506,7 @@ def log_info(log_data, atype, msg):
     log_data[atype].append(msg)
 
 
-def import_metadata_records(inst, creds, paths, log_data):
+def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
     for path in paths:
         records = get_metadata_records(path, creds)
         if records.startswith('Request failed'):
@@ -518,11 +521,12 @@ def import_metadata_records(inst, creds, paths, log_data):
             continue
         records = json.loads(records)
         if len(records['content']) == 0:
-            msg = '\n### No records found in {}\n'.format(path)
+            msg = '### No records found in {}'.format(path)
             log_info(log_data, 'import', msg)
             logging.error(msg)
-            continue
-        if import_to_ckan:
+            continue       
+
+        if False:#import_to_ckan:
             response = create_institution(inst)
 
             if response['status'] == 'failed' and \
@@ -544,7 +548,26 @@ def import_metadata_records(inst, creds, paths, log_data):
                 log_info(log_data, 'institution', response['msg'])
                 logging.error(response['msg'])
                 continue
-        for record in records['content']:            
+        for record in records['content']:
+            # if uids to import are provided, only import record with uid in given list
+            if len(ids_to_import) > 0:
+                #print(record['uid'])
+                #print(uids_to_import[0])
+                #sys.exit(1)
+                if len(record['jsonData']['identifier']) > 0:
+                    current_id = record['jsonData']['identifier']['identifier']                                
+                    #print(current_id)     
+                    if current_id not in ids_to_import:
+                        #print(uids_to_import[0])
+                        #logging.info("Skipping record {}, not in provided uid list".format(record['uid']))
+                        continue
+                    else:
+                        logging.info("Importing record {}, provided uid list".format(record['uid']))
+                else:
+                    #logging.error("Skipping invalid record")
+                    continue
+
+            #print(record['uid'])#['contributorType'])   
             record_id = None
             if isinstance(record['jsonData']['identifier'], dict):
                 record_id = record['jsonData']['identifier'].get('identifier')
@@ -585,7 +608,7 @@ def import_metadata_records(inst, creds, paths, log_data):
                     collection='TestImport2',
                 )
             #print('plone-{}'.format(record.get('status')))
-            if import_to_ckan:
+            if False:#import_to_ckan:
                 add_a_record_to_ckan(
                     record_id=record_id,
                     organization=inst,
@@ -596,6 +619,22 @@ def import_metadata_records(inst, creds, paths, log_data):
                     # original_xml??? or is it shipped in metadata_json
                 )
             #print(breakpnt)
+
+def read_ids_from_file(ids_file):
+    try:
+        flines = open(ids_file).readlines()
+        ids = []
+        for fl in flines:
+            #print(fl)
+            fl = fl.replace(" ","")
+            #id = fl.replace("-","").replace("\n","").replace(" ","")
+            id = fl[2:len(fl)-3]            
+            ids.append(id)
+        return ids
+    except Exception as e:
+        logging.error("Could not open/read from uids list file.\n{}".format(e))
+        return None
+
 
 if __name__ == "__main__":
 
@@ -612,6 +651,7 @@ if __name__ == "__main__":
     parser.add_argument("--agent-user", required=False, help="user name for agent")
     parser.add_argument("--agent-pwd", required=True, help="admin password for agent")
     parser.add_argument("--log-file",required=False, help="file to log output to, otherwise output logged to console.")
+    parser.add_argument("--id-list-file",required=False, help="ids of records to import, all other records skipped")
 
     args = parser.parse_args()
     creds = {
@@ -634,6 +674,16 @@ if __name__ == "__main__":
     if args.log_file:
         logging.getLogger("urllib3").setLevel(logging.WARNING)
         logging.basicConfig(filename=args.log_file,level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.INFO)
+
+    ids = []
+    if args.id_list_file:
+        ids = read_ids_from_file(args.id_list_file)
+        if (not ids) or (len(ids) == 0):
+            logging.error("Could not read valid ids from ids list file")
+            sys.exit(1)
+        #print(ids)
 
     institutions = get_institutions(creds)
     log_data = {}
@@ -641,7 +691,7 @@ if __name__ == "__main__":
         paths = get_metadata_collections(inst, creds, log_data)
         if paths:
             # added records to inst
-            import_metadata_records(inst, creds, paths, log_data)
+            import_metadata_records(inst, creds, paths, log_data, ids)
 
     # Get states from logged data
     states = {}
