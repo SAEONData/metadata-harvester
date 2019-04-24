@@ -259,7 +259,7 @@ def get_metadata_records(path, creds):
     return response.text
 
 
-def get_institutions(creds):
+def get_institutions(creds, institutions_list):
 
     url = "{}/Institutions/jsonContent?types=Institution".format(src_base_url)
     try:
@@ -285,8 +285,15 @@ def get_institutions(creds):
             'path': get_physical_path(result['context_path'])
         }
         institutions.append(inst)
-    return institutions
 
+    # remove institutions not in list, if it exists
+    rem_count = 0
+    if institutions_list:
+        for i in range(len(institutions)):
+            if institutions[i - rem_count]['id'] not in institutions_list:
+                institutions.pop(i - rem_count)
+                rem_count += 1
+    return institutions
 
 def get_metadata_collections(inst, creds, log_data):
 
@@ -405,16 +412,18 @@ def transform_record(record, creds):
         year = None
         try:
             year = datetime.strptime(datestr, format)
+            year = year.year
         except Exception as e:
             pass
         return year
 
+    pub_year = None
     publication_str = record['jsonData']['publicationYear']
     pub_year = get_publication_year(publication_str, '%Y')
     if not pub_year:
         pub_year = get_publication_year(publication_str, '%Y-%m-%d')
-    pub_year = pub_year.year
-    record['jsonData']['publicationYear'] = pub_year
+        #pub_year = pub_year.year
+    record['jsonData']['publicationYear'] = str(pub_year)
 
     record['jsonData']['alternateIdentifiers'] = [{
         "alternateIdentifier":record['uid'],
@@ -573,7 +582,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
             logging.error(msg)
             continue       
 
-        if import_to_ckan:
+        if False:#import_to_ckan:
             response = create_institution(inst)
 
             if response['status'] == 'failed' and \
@@ -623,6 +632,9 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                 msg = "No DOI identifier, skipping record!"
                 log_info(log_data,'record_id', msg)
                 logging.error(msg)
+                print("InstError {} url {}".format(record['institution'], record['url']))
+                #print(record['url'])
+                #sys.exit(1)
                 continue
 
             # Ignore problematic records
@@ -655,7 +667,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     collection='TestImport2',
                 )
             #print('plone-{}'.format(record.get('status')))
-            if import_to_ckan:
+            if False:#import_to_ckan:
                 add_a_record_to_ckan(
                     record_id=record_id,
                     organization=inst,
@@ -682,6 +694,17 @@ def read_ids_from_file(ids_file):
         logging.error("Could not open/read from uids list file.\n{}".format(e))
         return None
 
+def read_institutions_from_file(institutions_file):
+    try:
+        flines = open(institutions_file).readlines()
+        institutions=[]
+        for fl in flines:
+            fl = fl.replace("\n","")
+            institutions.append(fl)
+        return institutions
+    except Exception as e:
+        loggind.error("Could not open/read from institutions file.\n{}".format(e))
+        return None
 
 if __name__ == "__main__":
 
@@ -699,6 +722,7 @@ if __name__ == "__main__":
     parser.add_argument("--agent-pwd", required=True, help="admin password for agent")
     parser.add_argument("--log-file",required=False, help="file to log output to, otherwise output logged to console.")
     parser.add_argument("--id-list-file",required=False, help="ids of records to import, all other records skipped")
+    parser.add_argument("--institution-list-file",required=False, help="Institutions to import records from.")
 
     args = parser.parse_args()
     creds = {
@@ -732,7 +756,18 @@ if __name__ == "__main__":
             sys.exit(1)
         #print(ids)
 
-    institutions = get_institutions(creds)
+    institutions_list = None
+    if args.institution_list_file:
+        institutions_list = read_institutions_from_file(args.institution_list_file)
+        if (not institutions_list) or (len(institutions_list) == 0):
+            logging.error("Could not read valid institutions from input file")
+            sys.exit(1)
+        print("sdasdasdasdasdasd")
+        print(institutions_list)
+    
+    institutions = get_institutions(creds, institutions_list)
+
+
     log_data = {}
     for inst in institutions:
         paths = get_metadata_collections(inst, creds, log_data)
