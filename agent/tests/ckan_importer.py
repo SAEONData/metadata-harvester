@@ -401,6 +401,20 @@ def transform_record(record, creds):
         "date" : dates,
         "dateType": "Collected"})
 
+    def get_publication_year(datestr,format):
+        year = None
+        try:
+            year = datetime.strptime(datestr, format)
+        except Exception as e:
+            pass
+        return year
+
+    publication_str = record['jsonData']['publicationYear']
+    pub_year = get_publication_year(publication_str, '%Y')
+    if not pub_year:
+        pub_year = get_publication_year(publication_str, '%Y-%m-%d')
+    pub_year = pub_year.year
+    record['jsonData']['publicationYear'] = pub_year
 
     record['jsonData']['alternateIdentifiers'] = [{
         "alternateIdentifier":record['uid'],
