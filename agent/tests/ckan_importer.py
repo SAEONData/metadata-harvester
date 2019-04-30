@@ -345,6 +345,15 @@ def create_institution(inst):
 
 
 def transform_record(record, creds):
+    # If no identifier, remove the identifier field
+    record_id = None
+    if isinstance(record['jsonData']['identifier'], dict):
+        record_id = record['jsonData']['identifier'].get('identifier')
+    if not record_id:
+        logging.error("No Identifier for record")
+        record['jsonData'].pop("identifier")
+
+
     resourceType = record['jsonData']['resourceType']
     resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
     record['jsonData']['resourceType'] = {
@@ -353,40 +362,43 @@ def transform_record(record, creds):
     }
 
     #print(record['jsonData']['geoLocations'][0].keys())
-    if (len(record['jsonData']['geoLocations'][0].keys()) > 1):
-        print(record['jsonData']['geoLocations'][0])
-
-    locations = []
-    if ('geoLocationPoint' in record['jsonData']['geoLocations'][0].keys()):
-        geoPoint = record['jsonData']['geoLocations'][0]
-        location = {
-                "geoLocationPlace": geoPoint['geoLocationPlace'],   
-                "geoLocationPoint": {
-                    "pointLongitude":geoPoint['geoLocationPoint'].split()[1],
-                    "pointLatitude": geoPoint['geoLocationPoint'].split()[0]}}
-        locations.append(location)        
-
-    if ('geoLocationBox' in record['jsonData']['geoLocations'][0].keys()):
-        geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
-        northBoundLat = geoBoxParts[2]
-        southBoundLat = geoBoxParts[0]
-        westBoundLon = geoBoxParts[1]
-        eastBoundLon = geoBoxParts[3]
-    
-        location = {
-            'geoLocationBox': {
-                'northBoundLatitude': northBoundLat,
-                'southBoundLatitude': southBoundLat,
-                'westBoundLongitude': westBoundLon,
-                'eastBoundLongitude': eastBoundLon}}
-        locations.append(location)
-    
-    if len(locations) > 0:
-        record['jsonData']['geoLocations'] = locations
+    # if no geolocations, remove geolocations field
+    if len((record['jsonData']['geoLocations'])) == 0:
+        record['jsonData'].pop('geoLocations')
     else:
-        # if no geolocations, blank it out
-        record['jsonData']['geoLocations'] = [{
-            'geoLocationBox':'0 0 0 0'}]
+        if (len(record['jsonData']['geoLocations'][0].keys()) > 1):
+            print(record['jsonData']['geoLocations'][0])
+
+        locations = []
+        if ('geoLocationPoint' in record['jsonData']['geoLocations'][0].keys()):
+            geoPoint = record['jsonData']['geoLocations'][0]
+            location = {
+                    "geoLocationPlace": geoPoint['geoLocationPlace'],   
+                    "geoLocationPoint": {
+                        "pointLongitude":geoPoint['geoLocationPoint'].split()[1],
+                        "pointLatitude": geoPoint['geoLocationPoint'].split()[0]}}
+            locations.append(location)        
+
+        if ('geoLocationBox' in record['jsonData']['geoLocations'][0].keys()):
+            geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
+            northBoundLat = geoBoxParts[2]
+            southBoundLat = geoBoxParts[0]
+            westBoundLon = geoBoxParts[1]
+            eastBoundLon = geoBoxParts[3]
+        
+            location = {
+                'geoLocationBox': {
+                    'northBoundLatitude': northBoundLat,
+                    'southBoundLatitude': southBoundLat,
+                    'westBoundLongitude': westBoundLon,
+                    'eastBoundLongitude': eastBoundLon}}
+            locations.append(location)
+        
+        if len(locations) > 0:
+            record['jsonData']['geoLocations'] = locations
+        else:
+            # if no geolocations, remove geolocations field
+            record['jsonData'].pop('geoLocations')
     #print(record['jsonData']['geoLocations'])
 
     del_ind = []
@@ -459,20 +471,22 @@ def transform_record(record, creds):
             immutable_resource = resource
         else:
             linked_resources.append(resource)
-    # if no immutable resource then blank it out
+    # if no immutable resource then remove immutable resource field
     if not immutable_resource:
         msg = "Immutable resource url not available!"
-        logging.error(msg)
-        return None
-        #immutable_resource = {
-        #    'href':'none available',
-        #    'desc':'none available'
-        #}
-    #print(immutable_resource)
-    record['jsonData']['immutableResource'] = {
-        "resourceURL": immutable_resource['href'],
-        "resourceDescription": immutable_resource['desc']
-    }
+        logging.info(msg)
+        #record['jsonData'].pop('immutableResource')
+        #logging.info(record['jsonData'])
+    else:
+        record['jsonData']['immutableResource'] = {
+            "resourceURL": immutable_resource['href'],
+            "resourceDescription": immutable_resource['desc']
+        }
+        # if resource url is blank, remove the immutable resource field
+        immutable_url = record['jsonData']['immutableResource']['resourceURL']
+        if not immutable_url or len(immutable_url) == 0:
+            record['jsonData'].pop('immutableResource')
+        
     record['jsonData']['linkedResources'] = []
     linked_res_mappings = {
         'information':'Information',
@@ -526,6 +540,9 @@ def transform_record(record, creds):
     i = 0
     contributors = record['jsonData']['contributors']
     for contrib in contributors:
+        # if no contrib type set it to Other
+        if 'contributorType' not in contrib:
+            contrib['contributorType'] = 'Other'
         contrib_type = contrib['contributorType']        
         if contrib_type == 'Funder':
             funding_refs.append(contrib['contributorName'])
@@ -549,9 +566,9 @@ def transform_record(record, creds):
     #    print(record['jsonData']['contributors'])
 
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
-    if (len(record['jsonData']['original_xml']) > 0):
-        print('### original xml ###')
-        print(record['jsonData'])
+    #if (len(record['jsonData']['original_xml']) > 0):
+    #    print('### original xml ###')
+    #    print(record['jsonData'])
         #print(record['jsonData']['original_xml'])
     return record['jsonData']
 
@@ -582,7 +599,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
             logging.error(msg)
             continue       
 
-        if False:#import_to_ckan:
+        if import_to_ckan:
             response = create_institution(inst)
 
             if response['status'] == 'failed' and \
@@ -627,15 +644,29 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
             record_id = None
             if isinstance(record['jsonData']['identifier'], dict):
                 record_id = record['jsonData']['identifier'].get('identifier')
+            """
             if not record_id:                
                 #record_id = gen_unique_id()
                 msg = "No DOI identifier, skipping record!"
                 log_info(log_data,'record_id', msg)
-                logging.error(msg)
-                print("InstError {} url {}".format(record['institution'], record['url']))
-                #print(record['url'])
-                #sys.exit(1)
-                continue
+                #logging.error(msg)
+                #print("InstError {} url {}".format(record['institution'], record['url']))
+                immutable_resource = None
+                linked_resources = []
+                for resource in record['jsonData']['additionalFields']['onlineResources']:
+                    if (not immutable_resource) and (resource['func'] == 'download'):
+                        immutable_resource = resource
+                    else:
+                        linked_resources.append(resource)
+                
+                if not immutable_resource or len(immutable_resource['href']) == 0:
+                    logging.error("No DOI, and no immutable resource, skipping record! Links{}".format(linked_resources))
+                    #print(linked_resources)
+                    continue
+                else:
+                    logging.info("No DOI, but immutable resource so continuing {}...".format(immutable_resource))
+                    #print(immutable_resource)
+            """    
 
             # Ignore problematic records
             if record.get('status') not in ['private', 'provisional']:
@@ -658,7 +689,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                 'action': 'add',
                 'record_id': record_id,
                 'state': record.get('status', 'dunno')})
-            if import_to_agent:
+            if False:#import_to_agent:
                 add_a_record_to_elastic(
                     record_id=record_id,
                     organization=inst,
@@ -667,7 +698,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     collection='TestImport2',
                 )
             #print('plone-{}'.format(record.get('status')))
-            if False:#import_to_ckan:
+            if import_to_ckan:
                 add_a_record_to_ckan(
                     record_id=record_id,
                     organization=inst,
@@ -762,8 +793,6 @@ if __name__ == "__main__":
         if (not institutions_list) or (len(institutions_list) == 0):
             logging.error("Could not read valid institutions from input file")
             sys.exit(1)
-        print("sdasdasdasdasdasd")
-        print(institutions_list)
     
     institutions = get_institutions(creds, institutions_list)
 
