@@ -25,7 +25,7 @@ agent_user = 'admin'
 metadata_index_name = 'md_index_1'
 
 # CKAN destination config
-ckan_base_url = 'http://ckan.dirisa.org:9090'
+ckan_base_url = 'http://192.168.111.56:8979'#'http://ckan.dirisa.org:9090'
 ckan_user = 'mike@webtide.co.za'
 
 
@@ -42,94 +42,135 @@ def get_physical_path(url):
 def set_workflow_state(state, record_id, organization, val_result):
     #print("Setting state for uid{}".format(record_id))
     data = {
-        'recordId': record_id,
-        'workflowState': state
+        #'recordId': record_id,
+        'state': state
     }
-    org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
-    url = "{}/setWorkflowState".format(
-        ckan_base_url, org_id_reformatted, org_id_reformatted)
+    org_id_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
+    #url = "{}/setWorkflowState".format(
+    #    ckan_base_url, org_id_reformatted, org_id_reformatted)
+    url = "{}/metadata/workflow/{}".format(
+        ckan_base_url, record_id)
     #print(data)
     #print(url)
     response = requests.post(
         url=url,
         params=data,
-        auth=requests.auth.HTTPBasicAuth(
-            creds['ckan_user'], creds['ckan_pwd'])
+        #auth=requests.auth.HTTPBasicAuth(
+        #    creds['ckan_user'], creds['ckan_pwd'])
     )
-    if response.status_code != 200:
+    result = json.loads(response.text)
+    print("set workflow state result {}".format(result))
+
+    state_unchanged = False
+    if response.status_code != 200 and ('message' not in result['detail']):
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
-    result = json.loads(response.text)
-    #print("## workflow status update result ###")
-    #print(result)
+    if response.status_code != 200 and ('message' in result['detail']) and \
+        (result['detail']['message'] != \
+            'The metadata record is already assigned the specified workflow state'):
+        raise RuntimeError('Request failed with return code: %s' % (
+            response.status_code))
+    elif response.status_code != 200 and ('message' in result['detail']) and \
+        (result['detail']['message'] == \
+            'The metadata record is already assigned the specified workflow state'):
+        logging.info('The metadata record is already assigned the specified workflow state {}'.format(state))
+        state_unchanged = True
 
-    if result['status'] == 'success':
-        msg = 'Workflow status updated to {}'.format(result['state'])
+    #print("## workflow status update result ###")
+
+    #if 'detail' in 
+
+    if not state_unchanged and result['success']:#
+        msg = 'Workflow status updated to {}'.format(state)
         logging.info(msg)
     else:
-        show_error = True
-        if ('message' in result['msg']) and \
-            (result['msg']['message'].__contains__(
-                'The metadata record is already assigned the specified workflow state')):
-                msg = "Already assigned state {}".format(state)
-                logging.info(msg)
-                show_error = False
-        if show_error:
-            msg = 'Workflow status could not be updated!\n Error {}'.format(result['msg'])
+        #show_error = True
+        #if ('message' in result['msg']) and \
+        #    (result['msg']['message'].__contains__(
+        #        'The metadata record is already assigned the specified workflow state')):
+        #        msg = "Already assigned state {}".format(state)
+        #        logging.info(msg)
+        #        show_error = False
+        if not state_unchanged:
+            msg = 'Workflow status could not be updated!\n Error {}'.format(result)
             logging.error(msg)
-            logging.error(val_result)
+            #logging.error(val_result)
             #print(val_result)
 
 def add_a_record_to_ckan(collection, metadata_json, organization, record_id, infrastructures, state):
 
-    data = {
-        'jsonData': json.dumps(metadata_json),
-        'metadataType': 'datacite-4-2',
-        'targetWorkflowState': 'plone-published',
-        'fallbackWorkflowState': 'plone-provisional' 
+    #data = {
+    #    'jsonData': json.dumps(metadata_json),
+    #    'metadataType': 'datacite-4-2',
+    #    'targetWorkflowState': 'plone-published',
+    #    'fallbackWorkflowState': 'plone-provisional' 
+    #}
+
+    org_id_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
+    #url = "{}/Institutions/{}/{}-repository/metadata/jsonCreateMetadataAsJson".format(
+    #    ckan_base_url, org_id_reformatted, org_id_reformatted)
+
+    url = "{}/metadata/".format(ckan_base_url)
+
+    print("trying to add record into {}".format(org_id_reformatted))
+    print(org_id_reformatted + '-metadata')
+    record_data = {
+            "institution": org_id_reformatted,
+            "metadata_standard": 'saeon-odp-4-2',
+            "metadata": metadata_json,#json.dumps(metadata_json),
+            "infrastructures": [],
+            "collection": org_id_reformatted + '-metadata'
     }
 
-    org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
-    url = "{}/Institutions/{}/{}-repository/metadata/jsonCreateMetadataAsJson".format(
-        ckan_base_url, org_id_reformatted, org_id_reformatted)
-    #print(url)
     response = requests.post(
         url=url,
-        params=data,
-        auth=requests.auth.HTTPBasicAuth(
-            creds['ckan_user'], creds['ckan_pwd'])
+        json=record_data
+        #params=data,
+        #auth=requests.auth.HTTPBasicAuth(
+        #    creds['ckan_user'], creds['ckan_pwd'])
     )
+    #print(url)
+    #response = requests.post(
+    #    url=url,
+    #    params=data,
+    #    auth=requests.auth.HTTPBasicAuth(
+    #        creds['ckan_user'], creds['ckan_pwd'])
+    #)
+    print("add record response {}".format(response.text))
     if response.status_code != 200:
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
     result = json.loads(response.text)
-    #print("#### RESULT ####")
-    #print(result)
-    if result['status'] == 'success':
-        if check_ckan_added(organization, result):
-            msg = 'Added Successfully'
-            logging.info(msg)
-        else:
-            msg = 'Record not found'
-            logging.info(msg)
-        #if result['workflow_status'] == 'failed':
-        #    print('But workflow failed: {}'.format(result['workflow_msg']))
-        record_id = result['uid']
-        if result['validate_status'] == 'success':
-            msg = "Validated successfully, advancing state"
-            logging.info(msg)
-            set_workflow_state('plone-published', record_id, organization, result)
-        elif result['validate_status'] == 'failed':
-            msg = "Validation failed, regressing state"
-            logging.error(msg)
-            logging.error(result)
-            #print(metadata_json)
-            set_workflow_state('plone-provisional', record_id, organization, result)
+    print("#### RESULT ####")
+
+    print(result.keys())
+    #if result['status'] == 'success':
+
+    if check_ckan_added(organization, result):
+        msg = 'Added Successfully'
+        logging.info(msg)
+    else:
+        msg = 'Record not found'
+        logging.info(msg)
+    #if result['workflow_status'] == 'failed':
+    #    print('But workflow failed: {}'.format(result['workflow_msg']))
+    record_id = result['id']
+
+    if result['validated'] and (len(result['errors'].keys()) == 0):#result['validate_status'] == 'success':
+        msg = "Validated successfully, advancing state"
+        logging.info(msg)
+        set_workflow_state('plone-published', record_id, organization, result)
+    elif result['validated'] and (len(result['errors'].keys()) > 0):
+        msg = "Validation failed, regressing state"
+        logging.error(msg)
+        logging.error(result)
+        #print(metadata_json)
+        set_workflow_state('plone-provisional', record_id, organization, result)
     else:
         msg = 'Request to add record failed'
         logging.error(msg)
         logging.error(result)
-        #print(result)
+    #    #print(result)
     return result
 
 
@@ -166,22 +207,23 @@ def add_a_record_to_elastic(collection, metadata_json, organization, record_id, 
 
 
 def check_ckan_added(organization, result):
-
     time.sleep(1)
     # Find the record via jsonContent
-    record_id = result['uid']
-    data = {
-        'types': 'Metadata',
-    }
-    org_id_reformatted = title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
-    url = "{}/Institutions/{}/{}-repository/metadata/jsonContent".format(
-        ckan_base_url, org_id_reformatted, org_id_reformatted)
+    record_id = result['id']
+    #data = {
+    #    'types': 'Metadata',
+    #}
+    org_id_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
+    #url = "{}/Institutions/{}/{}-repository/metadata/jsonContent".format(
+    #    ckan_base_url, org_id_reformatted, org_id_reformatted)
+    url = "{}/metadata/{}".format(
+        ckan_base_url, record_id)
     try:
         response = requests.get(
             url=url,
-            params=data,
-            auth=requests.auth.HTTPBasicAuth(
-                creds['ckan_user'], creds['ckan_pwd'])
+            #params=data,
+            #auth=requests.auth.HTTPBasicAuth(
+            #    creds['ckan_user'], creds['ckan_pwd'])
         )
     except Exception as e:
         print(e)
@@ -194,9 +236,10 @@ def check_ckan_added(organization, result):
 
     found = False
     result = json.loads(response.text)
-    for record in result:
-        if record['id'] == record_id:
-            found = True
+    #print("checking result {}".format(result))
+
+    if result['id'] == record_id:
+        found = True
     return found
 
 
@@ -326,19 +369,37 @@ def get_metadata_collections(inst, creds, log_data):
 
 
 def create_institution(inst):
-    title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', inst['title'].lower())
-    url = "{}/Institutions/jsonCreateInstitution?title={}".format(
-        ckan_base_url, title_reformatted)
-    
+    #title_reformatted = re.sub(r'[^a-z0-9_-]+', '-', inst['title'].lower())
+    title_reformatted = inst['title']
+    #url = "{}/Institutions/jsonCreateInstitution?title={}".format(
+    #    ckan_base_url, title_reformatted)
+    url = "{}/institutions/".format(ckan_base_url)
+
+    inst_data = {
+        "title": title_reformatted,
+        "description": ""
+    }
+    #print("Add inst url {}".format(url))
     response = requests.post(
         url=url,
-        auth=requests.auth.HTTPBasicAuth(
-            creds['ckan_user'], creds['ckan_pwd'])
+        #auth=requests.auth.HTTPBasicAuth(
+        #    creds['ckan_user'], creds['ckan_pwd'])
+        json= inst_data
     )
+
+    #response = requests.post(
+    #    url=url,
+    #    auth=requests.auth.HTTPBasicAuth(
+    #        creds['ckan_user'], creds['ckan_pwd'])
+    #)
     if response.status_code != 200:
-        msg = 'Request failed with return code: %s' % (
-            response.status_code)
-        return {'status': 'failed', 'msg': [{'name': msg}]}
+        result = json.loads(response.text)
+        if 'detail' in result:
+            msg = result['detail']['name']
+        else:
+            msg = 'Request failed with return code: %s' % (
+                response.status_code)
+        return {'error_status': 'failed', 'msg': [{'name': msg}]}
 
     results = json.loads(response.text)
     return results
@@ -601,10 +662,12 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
 
         if import_to_ckan:
             response = create_institution(inst)
+            print("response {}".format(response))
 
-            if response['status'] == 'failed' and \
-                'message' in response['msg'] and \
-                response['msg']['message'].startswith(
+            if 'error_status' in response and \
+                response['error_status'] == 'failed' and \
+                'message' in response['msg'][0] and \
+                response['msg'][0]['message'].startswith(
                     'Access denied'):
                 msg = '\n### Access denied! Could not add institution %s\n' %(inst)
                 logging.error(msg)
@@ -612,15 +675,25 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                 #print(msg)
                 
                 log_info(log_data,'institution', msg)  
-                log_info(log_data, 'institution', response['msg'])
+                log_info(log_data, 'institution', response['msg'])                
                 continue
-
-            if response['status'] == 'failed' and \
-               not response['msg']['name'][0].startswith(
-                    'Group name already exists'):
+            #print("add inst response {}".format(response))
+            if 'error_status' in response and \
+                response['error_status'] == 'failed' and \
+                not response['msg'][0]['name'][0].startswith(
+                    'Group name already exists in database'):
                 log_info(log_data, 'institution', response['msg'])
+                logging.error("Could not add institution: {}".format(inst))
+                logging.error(response['msg'])                
+                continue
+            elif 'error_status' in response and \
+                response['error_status'] == 'failed' and \
+                response['msg'][0]['name'][0].startswith(
+                    'Group name already exists in database'):
+                logging.error("Could not add institution: {}".format(inst))
                 logging.error(response['msg'])
-                continue
+            
+        
         for record in records['content']:
             # if uids to import are provided, only import record with uid in given list
             if len(ids_to_import) > 0:
