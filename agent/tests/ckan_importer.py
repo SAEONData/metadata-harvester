@@ -730,7 +730,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
             all_empty = False
             for key in record['jsonData'].keys():
                 if key != 'errors':
-                    val = record['jsonData']['key']
+                    val = record['jsonData'][key]
                     if val or len(val) > 0:
                         all_empty = True
             if all_empty:
