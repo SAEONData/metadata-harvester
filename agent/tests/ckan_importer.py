@@ -673,7 +673,7 @@ def log_info(log_data, atype, msg):
 
 def check_record_empty(record):
     empty_key_igore_list = ['language','alternateIdentifiers', 'original_xml', 
-                            'errors' ,'linkedResources']
+                            'errors' ,'linkedResources', 'additionalFields']
     empty_cases = [ 
         'None',
         [{'description': 'none'}],
