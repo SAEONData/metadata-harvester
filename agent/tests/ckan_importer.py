@@ -38,6 +38,7 @@ UPDATE_METRICS = {
     'unpublished':0,
 }
 
+
 def gen_unique_id():
     return datetime.now().strftime("%Y%m%d%H%M%S%f")
 
@@ -150,11 +151,13 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     print("add record response {}".format(response.text))
     if response.status_code != 200:
         print(record_data['metadata'].keys())
-        print('Title {}'.format(record_data['metadata']['titles']))
-        print(url)
-        record_data['metadata'].pop('original_xml')
-        record_data['metadata'].pop('errors')
-        print(record_data['metadata'])
+        if check_record_empty(record['jsonData']):
+            print("Record is empty!!!")
+        else:
+            print(url)
+            record_data['metadata'].pop('original_xml')
+            record_data['metadata'].pop('errors')
+            print(record_data['metadata'])
 
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
@@ -668,6 +671,28 @@ def log_info(log_data, atype, msg):
         log_data[atype] = []
     log_data[atype].append(msg)
 
+def check_record_empty(record):
+    empty_key_igore_list = ['language','alternateIdentifiers', 'original_xml', 
+                            'errors' ,'linkedResources']
+    empty_cases = [ 
+        'None',
+        [{'description': 'none'}],
+        [{'date': '', 'dateType': 'Collected'}],
+        [{'rights': 'none', 'rightsURI': 'none'}],
+        {'resourceType': '', 'resourceTypeGeneral': 'Dataset'},
+        [{'descriptionType': 'Abstract', 'description': 'none'}],
+        [{'rights': 'none', 'rightsURI': 'none'}]
+    ]
+    all_empty = True
+    for key in record.keys():
+        if key not in empty_key_igore_list:
+            val = record[key]
+            if val or len(val) > 0:
+                #all_empty = False
+                if val not in empty_cases:
+                    all_empty = False
+    return all_empty
+
 
 def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
     for path in paths:
@@ -745,15 +770,9 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     #logging.error("Skipping invalid record")
                     continue
             # check if all record values are empty
-            all_empty = True
-            for key in record['jsonData'].keys():
-                if key != 'errors':
-                    val = record['jsonData'][key]
-                    if val or len(val) > 0:
-                        all_empty = False
-            if all_empty:
-                logging.error('\n\n\n All metadata fields are empty, skipping record ... \n\n\n')                
-                continue
+            #if check_record_empty(record['jsonData']):
+            #    logging.error("\n\n\n All metadata fields are empty, skipping record ... \n\n\n")
+            #    continue
 
             #print(record['uid'])#['contributorType'])   
             record_id = None
