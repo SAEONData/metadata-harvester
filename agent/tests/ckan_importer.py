@@ -151,7 +151,7 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     print("add record response {}".format(response.text))
     if response.status_code != 200:
         print(record_data['metadata'].keys())
-        if check_record_empty(record['jsonData']):
+        if check_record_empty(record_data['metadata']):
             print("Record is empty!!!")
         else:
             print(url)
