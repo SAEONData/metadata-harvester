@@ -745,12 +745,12 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     #logging.error("Skipping invalid record")
                     continue
             # check if all record values are empty
-            all_empty = False
+            all_empty = True
             for key in record['jsonData'].keys():
                 if key != 'errors':
                     val = record['jsonData'][key]
                     if val or len(val) > 0:
-                        all_empty = True
+                        all_empty = False
             if all_empty:
                 logging.error('\n\n\n All metadata fields are empty, skipping record ... \n\n\n')                
                 continue
