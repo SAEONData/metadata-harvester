@@ -16,7 +16,7 @@ import_to_agent = False
 # Source config
 # src_base_url = 'http://qa.dirisa.org'
 src_base_url = 'http://oa.dirisa.org'
-# src_base_url = 'http://oa.dirisa.org/Institutions/carbon-atlas/carbon-atlas'
+#src_base_url = 'http://oa.dirisa.org/Institutions/carbon-atlas/carbon-atlas'
 # src_base_url = 'http://localhost:8080/SAEON'
 
 # ES destination config
@@ -28,6 +28,15 @@ metadata_index_name = 'md_index_1'
 ckan_base_url = 'http://192.168.111.56:8979'#'http://ckan.dirisa.org:9090'
 ckan_user = 'mike@webtide.co.za'
 
+
+UPDATE_METRICS = {
+    'update_count':0,
+    'records_added':0,
+    'validated_successfully':0,
+    'validation_errors': 0,
+    'published':0,
+    'unpublished':0,
+}
 
 def gen_unique_id():
     return datetime.now().strftime("%Y%m%d%H%M%S%f")
@@ -83,6 +92,7 @@ def set_workflow_state(state, record_id, organization, val_result):
     if not state_unchanged and result['success']:#
         msg = 'Workflow status updated to {}'.format(state)
         logging.info(msg)
+        return True
     else:
         #show_error = True
         #if ('message' in result['msg']) and \
@@ -96,6 +106,7 @@ def set_workflow_state(state, record_id, organization, val_result):
             logging.error(msg)
             #logging.error(val_result)
             #print(val_result)
+            return False
 
 def add_a_record_to_ckan(collection, metadata_json, organization, record_id, infrastructures, state):
 
@@ -138,6 +149,13 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     #)
     print("add record response {}".format(response.text))
     if response.status_code != 200:
+        print(record_data['metadata'].keys())
+        print('Title {}'.format(record_data['metadata']['titles']))
+        print(url)
+        record_data['metadata'].pop('original_xml')
+        record_data['metadata'].pop('errors')
+        print(record_data['metadata'])
+
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
     result = json.loads(response.text)
@@ -149,6 +167,9 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     if check_ckan_added(organization, result):
         msg = 'Added Successfully'
         logging.info(msg)
+
+        UPDATE_METRICS['records_added'] = UPDATE_METRICS['records_added'] + 1
+
     else:
         msg = 'Record not found'
         logging.info(msg)
@@ -159,13 +180,21 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     if result['validated'] and (len(result['errors'].keys()) == 0):#result['validate_status'] == 'success':
         msg = "Validated successfully, advancing state"
         logging.info(msg)
-        set_workflow_state('plone-published', record_id, organization, result)
+        updated = set_workflow_state('plone-published', record_id, organization, result)
+        UPDATE_METRICS['validated_successfully'] = UPDATE_METRICS['validated_successfully'] + 1
+        if updated:
+            UPDATE_METRICS['published'] = UPDATE_METRICS['published'] + 1
+
     elif result['validated'] and (len(result['errors'].keys()) > 0):
         msg = "Validation failed, regressing state"
         logging.error(msg)
         logging.error(result)
         #print(metadata_json)
-        set_workflow_state('plone-provisional', record_id, organization, result)
+        updated = set_workflow_state('plone-provisional', record_id, organization, result)
+        UPDATE_METRICS['validation_errors'] = UPDATE_METRICS['validation_errors'] + 1
+        if updated:
+            UPDATE_METRICS['unpublished'] = UPDATE_METRICS['unpublished'] + 1
+
     else:
         msg = 'Request to add record failed'
         logging.error(msg)
@@ -643,6 +672,7 @@ def log_info(log_data, atype, msg):
 def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
     for path in paths:
         records = get_metadata_records(path, creds)
+        
         if records.startswith('Request failed'):
             msg = '\n### {}: {}\n'.format(path, records)
             log_info(log_data, 'import', msg)
@@ -692,9 +722,21 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     'Group name already exists in database'):
                 logging.error("Could not add institution: {}".format(inst))
                 logging.error(response['msg'])
-            
         
+        UPDATE_METRICS['update_count'] = UPDATE_METRICS['update_count'] + len(records['content'])
+                
         for record in records['content']:
+            # check if all record values are empty
+            all_empty = False
+            for key in record['jsonData'].keys():
+                if key != 'errors':
+                    val = record['jsonData']['key']
+                    if val or len(val) > 0:
+                        all_empty = True
+            if all_empty:
+                logging.error('\n\n\n All metadata fields are empty, skipping record ... \n\n\n')                
+                continue
+
             # if uids to import are provided, only import record with uid in given list
             if len(ids_to_import) > 0:
                 #print(record['uid'])
@@ -892,6 +934,8 @@ if __name__ == "__main__":
             states[log['state']] = 0
         states[log['state']] += 1
 
-    print('States: {}'.format(states))
-    print('Ignored: {}'.format(ignored))
-    print('Added: {}'.format(added))
+    #print('States: {}'.format(states))
+    #print('Ignored: {}'.format(ignored))
+    #print('Added: {}'.format(added))
+
+    print("\n\nUpdate stats\n{}".format(UPDATE_METRICS))
