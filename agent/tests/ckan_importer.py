@@ -151,13 +151,13 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     print("add record response {}".format(response.text))
     if response.status_code != 200:
         print(record_data['metadata'].keys())
-        if check_record_empty(record_data['metadata']):
-            print("Record is empty!!!")
-        else:
-            print(url)
-            record_data['metadata'].pop('original_xml')
-            record_data['metadata'].pop('errors')
-            print(record_data['metadata'])
+        #if check_record_empty(record_data['metadata']):
+        #    print("Record is empty!!!")
+        #else:
+        #    print(url)
+        #    record_data['metadata'].pop('original_xml')
+        #    record_data['metadata'].pop('errors')
+        #    print(record_data['metadata'])
 
         raise RuntimeError('Request failed with return code: %s' % (
             response.status_code))
@@ -771,9 +771,9 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     #logging.error("Skipping invalid record")
                     continue
             # check if all record values are empty
-            #if check_record_empty(record['jsonData']):
-            #    logging.error("\n\n\n All metadata fields are empty, skipping record ... \n\n\n")
-            #    continue
+            if check_record_empty(record['jsonData']):
+                logging.error("\n\n\n All metadata fields are empty, skipping record ... \n\n\n")
+                continue
 
             #print(record['uid'])#['contributorType'])   
             record_id = None
