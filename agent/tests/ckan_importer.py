@@ -691,6 +691,7 @@ def check_record_empty(record):
                 #all_empty = False
                 if val not in empty_cases:
                     all_empty = False
+                    print("non empty value {}".format(val))
     return all_empty
 
 
