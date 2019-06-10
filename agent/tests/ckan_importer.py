@@ -726,16 +726,6 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
         UPDATE_METRICS['update_count'] = UPDATE_METRICS['update_count'] + len(records['content'])
                 
         for record in records['content']:
-            # check if all record values are empty
-            all_empty = False
-            for key in record['jsonData'].keys():
-                if key != 'errors':
-                    val = record['jsonData'][key]
-                    if val or len(val) > 0:
-                        all_empty = True
-            if all_empty:
-                logging.error('\n\n\n All metadata fields are empty, skipping record ... \n\n\n')                
-                continue
 
             # if uids to import are provided, only import record with uid in given list
             if len(ids_to_import) > 0:
@@ -754,6 +744,16 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                 else:
                     #logging.error("Skipping invalid record")
                     continue
+            # check if all record values are empty
+            all_empty = False
+            for key in record['jsonData'].keys():
+                if key != 'errors':
+                    val = record['jsonData'][key]
+                    if val or len(val) > 0:
+                        all_empty = True
+            if all_empty:
+                logging.error('\n\n\n All metadata fields are empty, skipping record ... \n\n\n')                
+                continue
 
             #print(record['uid'])#['contributorType'])   
             record_id = None
