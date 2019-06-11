@@ -501,10 +501,24 @@ def transform_record(record, creds, inst):
             record['jsonData'].pop('geoLocations')
     #print(record['jsonData']['geoLocations'])
 
+    def check_date_format(date_str):
+        valid = True
+        try:
+            datetime.strptime(date_str, '%Y-%m-%d')
+        except ValueError:
+            logging.error("Invalid date, {}".format(date_str))
+            valid = False
+        return valid
+
     del_ind = []
     for i in range(len(record['jsonData']['dates'])):
         if len(record['jsonData']['dates'][i]['date']) == 0:
             del_ind.append(i)
+        else:
+            if not check_date_format(record['jsonData']['dates'][i]['date']):
+                logging.error("Invalid date format, removing it")
+                del_ind.append(i)
+
     for i in range(len(del_ind)):
         record['jsonData']['dates'].pop(del_ind[i] - i*1)
     
