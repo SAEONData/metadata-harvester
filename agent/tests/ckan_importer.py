@@ -455,6 +455,9 @@ def transform_record(record, creds):
         'resourceType': resourceType,
         'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
     }
+    
+    if len(record['jsonData']['resourceTypeGeneral']) == 0:
+        record['jsonData']['resourceTypeGeneral'] = 'Dataset'
 
     #print(record['jsonData']['geoLocations'][0].keys())
     # if no geolocations, remove geolocations field
