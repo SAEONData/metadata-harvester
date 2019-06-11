@@ -535,7 +535,12 @@ def transform_record(record, creds, inst):
     if not pub_year:
         pub_year = get_publication_year(publication_str, '%Y-%m-%d')
         #pub_year = pub_year.year
-    record['jsonData']['publicationYear'] = str(pub_year)
+    
+    # if pub year is still none, default to 2018
+    if not pub_year:
+        record['jsonData']['publicationYear'] = '2018'
+    else:
+        record['jsonData']['publicationYear'] = str(pub_year)
 
     record['jsonData']['alternateIdentifiers'] = [{
         "alternateIdentifier":record['uid'],
