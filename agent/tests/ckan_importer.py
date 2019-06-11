@@ -437,7 +437,7 @@ def create_institution(inst):
     return results
 
 
-def transform_record(record, creds):
+def transform_record(record, creds, inst):
     # If no identifier, or dummy identifier, remove the identifier field
     record_id = None
     if isinstance(record['jsonData']['identifier'], dict):
@@ -563,6 +563,13 @@ def transform_record(record, creds):
             'rightsURI': record['jsonData']['rights'][0]['rightsURI']
         }
     ]
+
+    rightsURI = record['jsonData']['rightsList'][0]['rightsURI'] 
+    if not rightsURI or rightsURI == 'none':
+        if inst['path'] != 'Institutions/chief-directorate-national-geo-spatial-information':
+            record['jsonData']['rightsList'][0]['rightsURI'] = 'https://creativecommons.org/licenses/by/4.0/'
+        else:
+            record['jsonData']['rightsList'][0]['rightsURI'] = '' 
 
     immutable_resource = None
     linked_resources = []
@@ -820,7 +827,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                 logging.error(msg)
                 continue
 
-            new_json_data = transform_record(record, creds)
+            new_json_data = transform_record(record, creds, inst)
 
             if not new_json_data:
                 msg = "Transform error! Skipping record."
