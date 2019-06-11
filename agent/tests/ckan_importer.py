@@ -438,14 +438,16 @@ def create_institution(inst):
 
 
 def transform_record(record, creds):
-    # If no identifier, remove the identifier field
+    # If no identifier, or dummy identifier, remove the identifier field
     record_id = None
     if isinstance(record['jsonData']['identifier'], dict):
         record_id = record['jsonData']['identifier'].get('identifier')
     if not record_id:
         logging.error("No Identifier for record")
         record['jsonData'].pop("identifier")
-
+    elif 'DummyDOI' in record['jsonData']['identifier']['identifier']:
+        logging.error("DummyDOI found, removing identifier")
+        record['jsonData'].pop("identifier")
 
     resourceType = record['jsonData']['resourceType']
     resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
@@ -772,7 +774,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     continue
             # check if all record values are empty
             if check_record_empty(record['jsonData']):
-                logging.error("\n\n\n All metadata fields are empty, skipping record ... \n\n\n")
+                logging.error("All metadata fields are empty, skipping record ...")
                 continue
 
             #print(record['uid'])#['contributorType'])   
