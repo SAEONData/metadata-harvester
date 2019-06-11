@@ -694,6 +694,11 @@ def transform_record(record, creds, inst):
     if not creators or len(creators) == 0:
         record['jsonData']['creators'] = ['{}'.format(inst['title'])]
 
+
+    publisher = record['jsonData']['publisher']
+    if not publisher or len(publisher) == 0:
+        record['jsonData']['publisher'] = ['{}'.format(inst['title'])]
+
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
     #if (len(record['jsonData']['original_xml']) > 0):
     #    print('### original xml ###')
