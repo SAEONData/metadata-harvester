@@ -445,9 +445,11 @@ def transform_record(record, creds):
     if not record_id:
         logging.error("No Identifier for record")
         record['jsonData'].pop("identifier")
-    elif 'DummyDOI' in record['jsonData']['identifier']['identifier']:
-        logging.error("DummyDOI found, removing identifier")
-        record['jsonData'].pop("identifier")
+    else:
+        identifier = record['jsonData']['identifier']['identifier']
+        if 'DummyDOI' in identifier or 'SAEON_DOI' in identifier:
+            logging.error("DummyDOI found, removing identifier")
+            record['jsonData'].pop("identifier")
 
     resourceType = record['jsonData']['resourceType']
     resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
