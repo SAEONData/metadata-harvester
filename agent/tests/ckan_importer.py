@@ -690,6 +690,9 @@ def transform_record(record, creds, inst):
     #if len(contrib_i_to_remove) > 0:
     #    print("Removed mandigno")
     #    print(record['jsonData']['contributors'])
+    creators = record['jsonData']['creators']
+    if not creators or len(creators) == 0:
+        record['jsonData']['creators'] = ['{}'.format(inst['title'])]
 
     record['jsonData']['original_xml'] = download_xml(record['url'], creds)
     #if (len(record['jsonData']['original_xml']) > 0):
