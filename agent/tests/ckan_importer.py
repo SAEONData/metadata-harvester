@@ -536,7 +536,6 @@ def transform_record(record, creds, inst):
    
     #coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
     #coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
-
     # If no coverage end date, only use coverage begin for dates
     #if (len(coverageEnd) == 0):
     #    dates = coverageBegin
