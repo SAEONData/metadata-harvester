@@ -189,14 +189,24 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
             UPDATE_METRICS['published'] = UPDATE_METRICS['published'] + 1
 
     elif result['validated'] and (len(result['errors'].keys()) > 0):
-        msg = "Validation failed, regressing state"
+        msg = "Validation errors, attempting published state"
         logging.error(msg)
-        logging.error(result)
-        #print(metadata_json)
-        updated = set_workflow_state('plone-provisional', record_id, organization, result)
-        UPDATE_METRICS['validation_errors'] = UPDATE_METRICS['validation_errors'] + 1
+        #logging.error(result)
+        updated = set_workflow_state('plone-published', record_id, organization, result)
         if updated:
-            UPDATE_METRICS['unpublished'] = UPDATE_METRICS['unpublished'] + 1
+            msg = "Successfully published with validation errors"
+            logging.error(msg)
+            UPDATE_METRICS['validated_successfully'] = UPDATE_METRICS['validated_successfully'] + 1
+            UPDATE_METRICS['published'] = UPDATE_METRICS['published'] + 1
+        else:
+        #print(metadata_json)
+            msg = "Unable to publish with validation errors, setting state to provisional"
+            logging.error(msg)
+            logging.error(result)
+            updated = set_workflow_state('plone-provisional', record_id, organization, result)
+            UPDATE_METRICS['validation_errors'] = UPDATE_METRICS['validation_errors'] + 1
+            if updated:
+                UPDATE_METRICS['unpublished'] = UPDATE_METRICS['unpublished'] + 1
 
     else:
         msg = 'Request to add record failed'
@@ -440,6 +450,7 @@ def create_institution(inst):
 def transform_record(record, creds, inst):
     # If no identifier, or dummy identifier, remove the identifier field
     record_id = None
+
     if isinstance(record['jsonData']['identifier'], dict):
         record_id = record['jsonData']['identifier'].get('identifier')
     if not record_id:
@@ -521,18 +532,19 @@ def transform_record(record, creds, inst):
 
     for i in range(len(del_ind)):
         record['jsonData']['dates'].pop(del_ind[i] - i*1)
-    
-    coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
-    coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
+
+   
+    #coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
+    #coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
 
     # If no coverage end date, only use coverage begin for dates
-    if (len(coverageEnd) == 0):
-        dates = coverageBegin
-    else:
-        dates = "{}/{}".format(coverageBegin,coverageEnd)
-    record['jsonData']['dates'].append({
-        "date" : dates,
-        "dateType": "Collected"})
+    #if (len(coverageEnd) == 0):
+    #    dates = coverageBegin
+    #else:
+    #    dates = "{}/{}".format(coverageBegin,coverageEnd)
+    #record['jsonData']['dates'].append({
+    #    "date" : dates,
+    #    "dateType": "Collected"})
 
     def get_publication_year(datestr,format):
         year = None
@@ -971,8 +983,7 @@ if __name__ == "__main__":
             sys.exit(1)
     
     institutions = get_institutions(creds, institutions_list)
-
-
+    
     log_data = {}
     for inst in institutions:
         paths = get_metadata_collections(inst, creds, log_data)
