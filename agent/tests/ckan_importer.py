@@ -189,7 +189,7 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
             UPDATE_METRICS['published'] = UPDATE_METRICS['published'] + 1
 
     elif result['validated'] and (len(result['errors'].keys()) > 0):
-        msg = "Validation errors, attempting published state"
+        msg = "Validation errors:\n {}\nAttempting published state".format(result['errors'])
         logging.error(msg)
         #logging.error(result)
         updated = set_workflow_state('plone-published', record_id, organization, result)
@@ -1009,4 +1009,4 @@ if __name__ == "__main__":
     #print('Ignored: {}'.format(ignored))
     #print('Added: {}'.format(added))
 
-    print("\n\nUpdate stats\n{}".format(UPDATE_METRICS))
+    logging.info("\n\nUpdate stats\n{}".format(UPDATE_METRICS))
