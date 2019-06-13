@@ -68,9 +68,16 @@ def set_workflow_state(state, record_id, organization, val_result):
         #auth=requests.auth.HTTPBasicAuth(
         #    creds['ckan_user'], creds['ckan_pwd'])
     )
-    result = json.loads(response.text)
-    print("set workflow state result {}".format(result))
 
+    result = None
+    try:
+        result = json.loads(response.text)
+    except Exception:
+        logging.error("Couldn't decode resoponse {} {}".format(response.status_code, response.text))
+        raise RuntimeError('Request failed with return code: %s' % (
+            response.status_code))
+
+    print("set workflow state result {}".format(result))
     state_unchanged = False
     if response.status_code != 200 and ('message' not in result['detail']):
         raise RuntimeError('Request failed with return code: %s' % (
