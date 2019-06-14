@@ -471,10 +471,17 @@ def transform_record(record, creds, inst):
 
     resourceType = record['jsonData']['resourceType']
     resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
-    record['jsonData']['resourceType'] = {
-        'resourceType': resourceType,
-        'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
-    }
+
+    if len(resourceType) != 0:
+        record['jsonData']['resourceType'] = {
+            'resourceType': resourceType,
+            'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
+        }
+    else:
+        record['jsonData']['resourceType'] = {
+            'resourceType': 'Dataset',
+            'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
+        }
     
     if len(record['jsonData']['resourceTypeGeneral']) == 0:
         record['jsonData']['resourceTypeGeneral'] = 'Dataset'
@@ -619,6 +626,7 @@ def transform_record(record, creds, inst):
     if not immutable_resource:
         msg = "Immutable resource url not available!"
         logging.info(msg)
+        record['jsonData']['immutableResource'] = {"resourceURL": "download link unavailable"}
         #record['jsonData'].pop('immutableResource')
         #logging.info(record['jsonData'])
     else:
@@ -629,7 +637,7 @@ def transform_record(record, creds, inst):
         # if resource url is blank, remove the immutable resource field
         immutable_url = record['jsonData']['immutableResource']['resourceURL']
         if not immutable_url or len(immutable_url) == 0:
-            record['jsonData'].pop('immutableResource')
+            record['jsonData']['immutableResource'] = {"resourceURL": "download link unavailable"}
         
     record['jsonData']['linkedResources'] = []
     linked_res_mappings = {
@@ -710,8 +718,8 @@ def transform_record(record, creds, inst):
     #    print(record['jsonData']['contributors'])
     creators = record['jsonData']['creators']
     if not creators or len(creators) == 0:
-        record['jsonData']['creators'] = ['{}'.format(inst['title'])]
-
+        inst_title = '{}'.format(inst['title'])
+        record['jsonData']['creators'] = [{"creatorName":inst_title, "affiliation":inst_title}]
 
     publisher = record['jsonData']['publisher']
     if not publisher or len(publisher) == 0:
