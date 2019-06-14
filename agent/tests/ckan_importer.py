@@ -38,7 +38,6 @@ UPDATE_METRICS = {
     'unpublished':0,
 }
 
-
 def gen_unique_id():
     return datetime.now().strftime("%Y%m%d%H%M%S%f")
 
@@ -457,17 +456,18 @@ def create_institution(inst):
 def transform_record(record, creds, inst):
     # If no identifier, or dummy identifier, remove the identifier field
     record_id = None
-
     if isinstance(record['jsonData']['identifier'], dict):
         record_id = record['jsonData']['identifier'].get('identifier')
     if not record_id:
-        logging.error("No Identifier for record")
-        record['jsonData'].pop("identifier")
-    else:
-        identifier = record['jsonData']['identifier']['identifier']
-        if 'DummyDOI' in identifier or 'SAEON_DOI' in identifier:
-            logging.error("DummyDOI found, removing identifier")
-            record['jsonData'].pop("identifier")
+        # If no identifier, set to plone UI
+        identifier = record['uid']
+        record['jsonData']['identifier'] = {"identifier": identifier, "identifierType": "plone-id"}
+
+    #else:
+    #    identifier = record['jsonData']['identifier']['identifier']
+    #    if 'DummyDOI' in identifier or 'SAEON_DOI' in identifier:
+    #        logging.error("DummyDOI found, removing identifier")
+    #        record['jsonData'].pop("identifier")
 
     resourceType = record['jsonData']['resourceType']
     resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
@@ -868,8 +868,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                 else:
                     logging.info("No DOI, but immutable resource so continuing {}...".format(immutable_resource))
                     #print(immutable_resource)
-            """    
-
+            """
             # Ignore problematic records
             if record.get('status') not in ['private', 'provisional']:
                 log_info(log_data, 'add_record', {
