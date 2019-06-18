@@ -588,18 +588,22 @@ def transform_record(record, creds, inst):
     # if no description, blank it out
     if (len(record['jsonData']['description']) == 0):
         record['jsonData']['description'] = [{
-            'description':'none'}]
+            'description':''}]
 
     record['jsonData']['descriptions'] = []
     record['jsonData']['descriptions'].append({
         'descriptionType': 'Abstract',#record['jsonData']['description'][0]['descriptionType'],
         'description': record['jsonData']['description'][0]['description']})
 
+    # remove old description field
+    if 'description' in record['jsonData']:
+        record['jsonData'].pop('description')
+
     # if no rights then blank it out
     if (len(record['jsonData']['rights']) == 0):
         record['jsonData']['rights'] = [{
-            'rights': 'none',
-            'rightsURI': 'none'}]
+            'rights': '',
+            'rightsURI': ''}]
 
     record['jsonData']['rightsList'] = [
         {
