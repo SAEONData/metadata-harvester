@@ -720,6 +720,8 @@ def transform_record(record, creds, inst):
     if not creators or len(creators) == 0:
         inst_title = '{}'.format(inst['title'])
         record['jsonData']['creators'] = [{"creatorName":inst_title, "affiliation":inst_title}]
+    elif len(creators[0]['creatorName']) == 0:
+        record['jsonData']['creators'][0]['creatorName'] = inst['title']
 
     publisher = record['jsonData']['publisher']
     if not publisher or len(publisher) == 0:
