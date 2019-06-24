@@ -727,24 +727,12 @@ def transform_record(record, creds, inst):
     elif len(creators[0]['creatorName']) == 0:
         record['jsonData']['creators'][0]['creatorName'] = inst['title']
     elif len(creators) > 0:
-        #new_creators = []
-        #alt_keys = ["affiliation", "creatorName","nameIdentifier", "nameIdentifierScheme", "schemeURI"]
         for creator in creators:
             if len(creator["affiliation"]) == 0:
                 creator["affiliation"] = inst['title']
-            #creator_keys = sorted(creator.keys())
-            #if creator_keys == alt_keys:
-            #    empty_record = True 
-            #    for k in creator:
-            #        if k != 'creatorName' and k != 'affiliation':
-            #            if len(creator[k]) > 0:
-            #                empty_record = False
-            #    if empty_record and len(creators) > 1:
-            #        print("\n\n\nGot a match!!!! {} {}\n\n".format(creator, record['uid']))
     
     remapped_creators = []
     for creator in creators:
-        ##alt_keys = ["affiliation", "creatorName","nameIdentifier", "nameIdentifierScheme", "schemeURI"]
         affiliation = creator["affiliation"] if "affiliation" in creator else ""
         creatornName = creator["creatorName"] if "creatorName" in creator else ""
         nameIdentifier = creator["nameIdentifier"] if "nameIdentifier" in creator else ""
