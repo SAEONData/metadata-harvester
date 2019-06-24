@@ -726,6 +726,64 @@ def transform_record(record, creds, inst):
         record['jsonData']['creators'] = [{"creatorName":inst_title, "affiliation":inst_title}]
     elif len(creators[0]['creatorName']) == 0:
         record['jsonData']['creators'][0]['creatorName'] = inst['title']
+    elif len(creators) > 0:
+        #new_creators = []
+        #alt_keys = ["affiliation", "creatorName","nameIdentifier", "nameIdentifierScheme", "schemeURI"]
+        for creator in creators:
+            if len(creator["affiliation"]) == 0:
+                creator["affiliation"] = inst['title']
+            #creator_keys = sorted(creator.keys())
+            #if creator_keys == alt_keys:
+            #    empty_record = True 
+            #    for k in creator:
+            #        if k != 'creatorName' and k != 'affiliation':
+            #            if len(creator[k]) > 0:
+            #                empty_record = False
+            #    if empty_record and len(creators) > 1:
+            #        print("\n\n\nGot a match!!!! {} {}\n\n".format(creator, record['uid']))
+    
+    remapped_creators = []
+    for creator in creators:
+        ##alt_keys = ["affiliation", "creatorName","nameIdentifier", "nameIdentifierScheme", "schemeURI"]
+        affiliation = creator["affiliation"] if "affiliation" in creator else ""
+        creatornName = creator["creatorName"] if "creatorName" in creator else ""
+        nameIdentifier = creator["nameIdentifier"] if "nameIdentifier" in creator else ""
+        nameIdentifierScheme = creator["nameIdentifierScheme"] if "nameIdentifierScheme" in creator else ""
+        schemeURI = creator["schemeURI"] if "schemeURI" in creator else ""
+        remapped_creator =  {
+            "name": creatornName,
+            "nameType": "",
+            "givenName": "",
+            "familyName": "",
+            "nameIdentifiers": [
+                {
+                    "nameIdentifier": nameIdentifier,
+                    "nameIdentifierScheme": nameIdentifierScheme,
+                    "schemeURI": schemeURI
+                }
+            ],
+            "affiliations": [
+                {
+                    "affiliation": affiliation
+                }
+            ]
+        }
+        remapped_creators.append(remapped_creator)
+    duplicate_indeces = []
+    for creator in remapped_creators:
+        matches = 0
+        index = 0
+        for c in remapped_creators:
+            if str(creator) == str(c):
+                matches += 1
+                if matches > 1:
+                    duplicate_indeces.append(index)
+            index += 1
+    duplicate_indeces = list(set(duplicate_indeces))
+    print("\n\n\n\ duplicates {} \n {}\n\n\n".format(duplicate_indeces,remapped_creators))
+    for i in range(len(duplicate_indeces)):
+        remapped_creators.pop(duplicate_indeces[i] - i*1)
+    record['jsonData']['creators'] = remapped_creators
 
     publisher = record['jsonData']['publisher']
     if not publisher or len(publisher) == 0:
@@ -875,6 +933,10 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     logging.info("No DOI, but immutable resource so continuing {}...".format(immutable_resource))
                     #print(immutable_resource)
             """
+            #tl = record['jsonData']['titles'][0]['title']
+            #if tl != 'Small Area' and tl != 'Main Place':
+            #    continue
+
             # Ignore problematic records
             if record.get('status') not in ['private', 'provisional']:
                 log_info(log_data, 'add_record', {
