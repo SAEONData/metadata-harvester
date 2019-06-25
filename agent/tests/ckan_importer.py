@@ -156,7 +156,6 @@ def add_a_record_to_ckan(collection, metadata_json, organization, record_id, inf
     #)
     print("add record response {}".format(response.text))
     if response.status_code != 200:
-        print(record_data['metadata'].keys())
         #if check_record_empty(record_data['metadata']):
         #    print("Record is empty!!!")
         #else:
@@ -715,7 +714,38 @@ def transform_record(record, creds, inst):
     funding_refs_formatted = []
     for funding_ref in funding_refs:
         funding_refs_formatted.append({"funderName":funding_ref})
-    record['jsonData']['fundingReferences'] = funding_refs_formatted 
+    record['jsonData']['fundingReferences'] = funding_refs_formatted
+
+    # Map contributors to new metadata format
+    if len(record['jsonData']['contributors']) > 0:
+        contributors = record['jsonData']['contributors']
+        new_contributors = []
+        for contributor in contributors:
+            contributorName = contributor["contributorName"] if "contributorName" in contributor else ""
+            organisation = contributor["organisation"] if "organisation" in contributor else ""
+            contributorType = contributor["contributorType"] if "contributorType" in contributor else ""
+            affiliation = contributor["affiliation"] if "affiliation" in contributor else ""
+
+            new_contributor_mapping = {
+                    "contributorType": contributorType,
+                    "name": contributorName,
+                    "givenName": "",
+                    "familyName": "",
+                    "nameIdentifiers": [
+                        {
+                            "nameIdentifier": "",
+                            "nameIdentifierScheme": "",
+                            "schemeURI": ""
+                        }
+                    ],
+                    "affiliations": [
+                        {
+                            "affiliation": affiliation
+                        }
+                    ]
+                }
+            new_contributors.append(new_contributor_mapping)
+        record['jsonData']['contributors'] = new_contributors
     
     #if len(contrib_i_to_remove) > 0:
     #    print("Removed mandigno")
@@ -732,7 +762,7 @@ def transform_record(record, creds, inst):
                 creator["affiliation"] = inst['title']
     
     remapped_creators = []
-    for creator in creators:
+    for creator in record['jsonData']['creators']:
         affiliation = creator["affiliation"] if "affiliation" in creator else ""
         creatornName = creator["creatorName"] if "creatorName" in creator else ""
         nameIdentifier = creator["nameIdentifier"] if "nameIdentifier" in creator else ""
@@ -768,7 +798,6 @@ def transform_record(record, creds, inst):
                     duplicate_indeces.append(index)
             index += 1
     duplicate_indeces = list(set(duplicate_indeces))
-    print("\n\n\n\ duplicates {} \n {}\n\n\n".format(duplicate_indeces,remapped_creators))
     for i in range(len(duplicate_indeces)):
         remapped_creators.pop(duplicate_indeces[i] - i*1)
     record['jsonData']['creators'] = remapped_creators
@@ -777,11 +806,18 @@ def transform_record(record, creds, inst):
     if not publisher or len(publisher) == 0:
         record['jsonData']['publisher'] = '{}'.format(inst['title'])
 
-    record['jsonData']['original_xml'] = download_xml(record['url'], creds)
+    record['jsonData']['originalMetadata'] = download_xml(record['url'], creds)
     #if (len(record['jsonData']['original_xml']) > 0):
     #    print('### original xml ###')
     #    print(record['jsonData'])
         #print(record['jsonData']['original_xml'])
+
+    inv_keys = ['dataSchema', 'rights', 'resourceTypeGeneral', 'xsiSchema', 'schemaSpecific', 
+                'additionalFields', 'bounds', 'errors', 'title']
+    for k in inv_keys:
+        if k in record['jsonData']:
+            record['jsonData'].pop(k)
+
     return record['jsonData']
 
 
