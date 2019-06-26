@@ -812,6 +812,17 @@ def transform_record(record, creds, inst):
     #    print(record['jsonData'])
         #print(record['jsonData']['original_xml'])
 
+
+    if 'xsiSchema' in record['jsonData'] and len(record['jsonData']['xsiSchema']) > 0:
+        xsiSchema = record['jsonData']['xsiSchema']
+        relatedIdentifier = {
+            "relatedIdentifier": xsiSchema,
+            "relatedIdentifierType": "URL",
+            "relationType": "HasMetadata",
+            "schemeType":xsiSchema
+        }
+        record['jsonData']['relatedIdentifiers'].append(relatedIdentifier)
+
     inv_keys = ['dataSchema', 'rights', 'resourceTypeGeneral', 'xsiSchema', 'schemaSpecific', 
                 'additionalFields', 'bounds', 'errors', 'title']
     for k in inv_keys:
