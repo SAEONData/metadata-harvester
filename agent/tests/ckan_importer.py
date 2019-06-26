@@ -505,10 +505,10 @@ def transform_record(record, creds, inst):
 
         if ('geoLocationBox' in record['jsonData']['geoLocations'][0].keys()):
             geoBoxParts = record['jsonData']['geoLocations'][0]['geoLocationBox'].split()
-            northBoundLat = geoBoxParts[2]
-            southBoundLat = geoBoxParts[0]
-            westBoundLon = geoBoxParts[1]
-            eastBoundLon = geoBoxParts[3]
+            northBoundLat = geoBoxParts[2] if float(geoBoxParts[2]) > float(geoBoxParts[0]) else geoBoxParts[0]
+            southBoundLat = geoBoxParts[0] if float(geoBoxParts[2]) > float(geoBoxParts[0]) else geoBoxParts[2]
+            westBoundLon = geoBoxParts[1] if float(geoBoxParts[1]) < float(geoBoxParts[3]) else geoBoxParts[3]
+            eastBoundLon = geoBoxParts[3] if float(geoBoxParts[1]) < float(geoBoxParts[3]) else geoBoxParts[1]
         
             location = {
                 'geoLocationBox': {
@@ -523,7 +523,6 @@ def transform_record(record, creds, inst):
         else:
             # if no geolocations, remove geolocations field
             record['jsonData'].pop('geoLocations')
-    #print(record['jsonData']['geoLocations'])
 
     def check_date_format(date_str):
         valid = True
