@@ -524,12 +524,18 @@ def transform_record(record, creds, inst):
             # if no geolocations, remove geolocations field
             record['jsonData'].pop('geoLocations')
 
-    def check_date_format(date_str):
+    coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
+    coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
+    if (len(coverageEnd) > 0):
+        record['jsonData']['dates'].append({"date" : coverageEnd, "dateType": "Valid"})
+    if (len(coverageBegin) > 0):
+        record['jsonData']['dates'].append({"date" : coverageBegin, "dateType": "Collected"})
+
+    def check_date_format(date_str, format_str):
         valid = True
         try:
-            datetime.strptime(date_str, '%Y-%m-%d')
+            datetime.strptime(date_str, format_str)
         except ValueError:
-            logging.error("Invalid date, {}".format(date_str))
             valid = False
         return valid
 
@@ -538,24 +544,15 @@ def transform_record(record, creds, inst):
         if len(record['jsonData']['dates'][i]['date']) == 0:
             del_ind.append(i)
         else:
-            if not check_date_format(record['jsonData']['dates'][i]['date']):
-                logging.error("Invalid date format, removing it")
+            d = record['jsonData']['dates'][i]['date']
+            year_only_valid = check_date_format(d, '%Y-%m-%d')
+            full_date_valid = check_date_format(d, '%Y')
+            if not year_only_valid and not full_date_valid:
+                logging.error("Invalid date format, removing {}".format(d))
                 del_ind.append(i)
 
     for i in range(len(del_ind)):
         record['jsonData']['dates'].pop(del_ind[i] - i*1)
-
-   
-    #coverageBegin = record['jsonData']['additionalFields']['coverageBegin']
-    #coverageEnd = record['jsonData']['additionalFields']['coverageEnd']
-    # If no coverage end date, only use coverage begin for dates
-    #if (len(coverageEnd) == 0):
-    #    dates = coverageBegin
-    #else:
-    #    dates = "{}/{}".format(coverageBegin,coverageEnd)
-    #record['jsonData']['dates'].append({
-    #    "date" : dates,
-    #    "dateType": "Collected"})
 
     def get_publication_year(datestr,format):
         year = None
