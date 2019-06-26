@@ -474,7 +474,7 @@ def transform_record(record, creds, inst):
     if len(resourceType) != 0:
         record['jsonData']['resourceType'] = {
             'resourceType': resourceType,
-            'resourceTypeGeneral': 'Dataset'#resourceTypeGeneral
+            'resourceTypeGeneral': resourceTypeGeneral
         }
     else:
         record['jsonData']['resourceType'] = {
