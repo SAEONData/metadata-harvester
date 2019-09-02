@@ -472,6 +472,8 @@ def transform_record(record, creds, inst):
     resourceTypeGeneral = record['jsonData']['resourceTypeGeneral']
 
     if len(resourceType) != 0:
+        if len(resourceTypeGeneral) == 0:
+            resourceTypeGeneral = 'Dataset'
         record['jsonData']['resourceType'] = {
             'resourceType': resourceType,
             'resourceTypeGeneral': resourceTypeGeneral
@@ -509,13 +511,27 @@ def transform_record(record, creds, inst):
             southBoundLat = geoBoxParts[0] if float(geoBoxParts[2]) > float(geoBoxParts[0]) else geoBoxParts[2]
             westBoundLon = geoBoxParts[1] if float(geoBoxParts[1]) < float(geoBoxParts[3]) else geoBoxParts[3]
             eastBoundLon = geoBoxParts[3] if float(geoBoxParts[1]) < float(geoBoxParts[3]) else geoBoxParts[1]
-        
-            location = {
-                'geoLocationBox': {
-                    'northBoundLatitude': northBoundLat,
-                    'southBoundLatitude': southBoundLat,
-                    'westBoundLongitude': westBoundLon,
-                    'eastBoundLongitude': eastBoundLon}}
+
+            location = None
+            # check if location box is actually a point
+            if northBoundLat != southBoundLat and westBoundLon != eastBoundLon:
+                location = {
+                    'geoLocationBox': {
+                        'northBoundLatitude': northBoundLat,
+                        'southBoundLatitude': southBoundLat,
+                        'westBoundLongitude': westBoundLon,
+                        'eastBoundLongitude': eastBoundLon}}
+            else:
+                geoLocationPlace = ''
+                for loc in record['jsonData']['geoLocations']:
+                    if 'geoLocationPlace' in loc:
+                        geoLocationPlace = loc['geoLocationPlace']
+                location = {
+                    "geoLocationPlace": geoLocationPlace,#geoPoint['geoLocationPlace'],   
+                    "geoLocationPoint": {
+                        "pointLongitude":eastBoundLon,
+                        "pointLatitude": northBoundLat}}
+
             locations.append(location)
         
         if len(locations) > 0:
@@ -965,7 +981,7 @@ def import_metadata_records(inst, creds, paths, log_data, ids_to_import):
                     #print(immutable_resource)
             """
             #tl = record['jsonData']['titles'][0]['title']
-            #if tl != 'Small Area' and tl != 'Main Place':
+            #if tl != 'DCAS Head Office' and tl != 'National Archive - Cape Town':
             #    continue
 
             # Ignore problematic records
