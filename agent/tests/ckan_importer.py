@@ -25,7 +25,7 @@ agent_user = 'admin'
 metadata_index_name = 'md_index_1'
 
 # CKAN destination config
-ckan_base_url = 'http://192.168.111.56:8979'#'http://ckan.dirisa.org:9090'
+ckan_base_url = 'http://192.168.115.56:8999'#'http://odp.saeon.dvn:8999'#'http://192.168.111.56:8979'#'http://ckan.dirisa.org:9090'
 ckan_user = 'mike@webtide.co.za'
 
 
@@ -52,13 +52,14 @@ def set_workflow_state(state, record_id, organization, val_result):
     #print("Setting state for uid{}".format(record_id))
     data = {
         #'recordId': record_id,
-        'state': state
+        'workflow_state': state
     }
     org_id_reformatted = re.sub(r'[^a-z0-9_-]+', '-', organization['title'].lower())
     #url = "{}/setWorkflowState".format(
     #    ckan_base_url, org_id_reformatted, org_id_reformatted)
     url = "{}/metadata/workflow/{}".format(
         ckan_base_url, record_id)
+    #print('----')
     #print(data)
     #print(url)
     response = requests.post(
@@ -1062,11 +1063,11 @@ if __name__ == "__main__":
     parser.add_argument("--import-to-ckan", required=False, help="import metadata to CKAN")
     parser.add_argument("--ckan-base-url", required=False, help="the URL of the CKAN instance")
     parser.add_argument("--ckan-user", required=False, help="user name for ckan")
-    parser.add_argument("--ckan-pwd", required=True, help="admin password for ckan")
+    parser.add_argument("--ckan-pwd", required=False, help="admin password for ckan")
     parser.add_argument("--import-to-agent", required=False, help="import metadata to the SAEON Metadata Agent")
     parser.add_argument("--agent-base-url", required=False, help="the URL of the SAEON Metadata Agent")
     parser.add_argument("--agent-user", required=False, help="user name for agent")
-    parser.add_argument("--agent-pwd", required=True, help="admin password for agent")
+    parser.add_argument("--agent-pwd", required=False, help="admin password for agent")
     parser.add_argument("--log-file",required=False, help="file to log output to, otherwise output logged to console.")
     parser.add_argument("--id-list-file",required=False, help="ids of records to import, all other records skipped")
     parser.add_argument("--institution-list-file",required=False, help="Institutions to import records from.")
@@ -1075,10 +1076,10 @@ if __name__ == "__main__":
     creds = {
         'src_user': args.src_user or 'admin',
         'src_pwd': args.src_pwd,
-        'ckan_user': args.ckan_user or 'admin',
-        'ckan_pwd': args.ckan_pwd,
-        'agent_user': args.agent_user or 'admin',
-        'agent_pwd': args.agent_pwd,
+        #'ckan_user': args.ckan_user or 'admin',
+        #'ckan_pwd': args.ckan_pwd,
+        #'agent_user': args.agent_user or 'admin',
+        #'agent_pwd': args.agent_pwd,
     }
     # print(creds)
     if args.import_to_ckan:
